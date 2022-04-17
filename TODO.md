@@ -1,0 +1,2 @@
+- add nc.traditional for linux (the one that features the `-e` option)
+- add https://github.com/AlessandroZ/LaZagneForensic
