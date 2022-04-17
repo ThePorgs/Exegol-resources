@@ -15,6 +15,10 @@ function debug() {
   echo -e "${YELLOW}[D] $@${NOCOLOR}"
 }
 
+function success() {
+  echo -e "${GREEN}[+] $@${NOCOLOR}"
+}
+
 function prepare_filesystem() {
   info "Preparing filesystem"
   mkdir -p ./windows/
@@ -39,13 +43,6 @@ function add_sysinternals() {
   wget -nv -O ./windows/SysinternalsSuite.zip "https://download.sysinternals.com/files/SysinternalsSuite.zip"
   unzip -q -o -d ./windows/SysinternalsSuite ./windows/SysinternalsSuite.zip
   rm ./windows/SysinternalsSuite.zip
-}
-
-function add_winenum() {
-  info "Downloading WinEnum"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/mattiareggiani/WinEnum
-  git -C ./windows/WinEnum/ pull
 }
 
 function add_pspy() {
@@ -103,35 +100,6 @@ function add_mimikatz() {
   rm ./windows/mimikatz_trunk.zip
 }
 
-function add_nishang() {
-  info "Downloading Nishang"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/samratashok/nishang.git
-  git -C ./windows/nishang/ pull
-}
-
-function add_powersploit() {
-  info "Downloading PowerSploit"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/PowerShellMafia/PowerSploit
-  git -C ./windows/PowerSploit/ checkout dev
-  git -C ./windows/PowerSploit/ pull
-}
-
-function add_privesccheck() {
-  info "Downloading PrivescCheck"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/itm4n/PrivescCheck
-  git -C ./windows/PrivescCheck/ pull
-}
-
-function add_inveigh() {
-  info "Downloading Inveigh"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/Kevin-Robertson/Inveigh
-  git -C ./windows/Inveigh/ pull
-}
-
 function add_sharphound() {
   info "Downloading SharpHound"
   chkfs "./windows/"
@@ -142,13 +110,6 @@ function add_juicypotato() {
   info "Downloading JuicyPotato"
   chkfs "./windows/"
   wget -nv -O ./windows/JuicyPotato.exe "$(curl -s https://github.com/ohpe/juicy-potato/releases/latest | grep -o '"[^"]*"' | tr -d '"' | sed 's/tag/download/')/JuicyPotato.exe"
-}
-
-function add_impacket_windows() {
-  info "Downloading Impacket examples for Windows"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/maaaaz/impacket-examples-windows
-  git -C ./windows/impacket-examples-windows/ pull
 }
 
 function add_nc() {
@@ -191,20 +152,6 @@ function add_sublinacl() {
   wget -nv -O ./windows/sublinacl.exe "https://gitlab.com/onemask/pentest-tools/-/raw/master/windows/sublinacl.exe"
 }
 
-function add_mimipenguin() {
-  info "Downloading mimipenguin"
-  chkfs "./linux/"
-  git -C ./linux/ clone https://github.com/huntergregal/mimipenguin
-  git -C ./linux/mimipenguin/ pull
-}
-
-function add_mimipy() {
-  info "Downloading mimipy"
-  chkfs "./linux/"
-  git -C ./linux/ clone https://github.com/n1nj4sec/mimipy
-  git -C ./linux/mimipy/ pull
-}
-
 function add_plink() {
   info "Downloading plink"
   chkfs "./windows/"
@@ -220,23 +167,13 @@ function add_deepce() {
 
 function add_webshells() {
   info "Downloading webshells"
-  chkfs "./webshells/PHP"
-  rm -rf ./webshells/PHP/wso-webshell/
-  git -C ./webshells/PHP/ clone https://github.com/mIcHyAmRaNe/wso-webshell
+  chkfs "./webshells/PHP/wso-webshell/"
+  wget -nv -O ./webshells/PHP/wso-webshell/wso.php "https://raw.githubusercontent.com/mIcHyAmRaNe/wso-webshell/master/wso.php"
   sed -i 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php
   echo 'exegol4thewin' > ./webshells/PHP/wso-webshell/password.txt
   # Setting password to exegol4thewin
-  git -C ./webshells/PHP/ clone https://github.com/flozz/p0wny-shell
-  git -C ./webshells/PHP/p0wny-shell/ pull
   chkfs "./webshells/ASPX"
   wget -nv -O ./webshells/ASPX/webshell.aspx "https://raw.githubusercontent.com/xl7dev/WebShell/master/Aspx/ASPX%20Shell.aspx"
-}
-
-function add_mailsniper() {
-  info "Downloading MailSniper"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/dafthack/MailSniper
-  git -C ./windows/MailSniper/ pull
 }
 
 function add_ysoserial_net() {
@@ -247,22 +184,9 @@ function add_ysoserial_net() {
   prefix=${tag:1}
   wget -nv -O ./ysoserial_net.zip "$url/ysoserial-$prefix.zip"
   unzip -d ./windows/ ./ysoserial_net.zip
+  rm -r ./windows/ysoserial.net
   mv ./windows/Release/ ./windows/ysoserial.net
   rm ./ysoserial_net.zip
-}
-
-function add_bitleaker() {
-  info "Downloading bitleaker for BitLocker TPM attacks"
-  chkfs "./encrypted_disks/"
-  git -C "./encrypted_disks/" clone https://github.com/kkamagui/bitleaker
-  git -C "./encrypted_disks/bitleaker/" pull
-}
-
-function add_napper() {
-  info "Download napper for TPM vuln scanning"
-  chkfs "./encrypted_disks/"
-  git -C "./encrypted_disks/" clone https://github.com/kkamagui/napper-for-tpm
-  git -C "./encrypted_disks/napper-for-tpm/" pull
 }
 
 function add_http-put-server() {
@@ -277,11 +201,10 @@ function add_azurehound() {
   wget -nv -O ./windows/AzureHound.ps1 "https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/Collectors/AzureHound.ps1"
 }
 
-function add_sharpcollection() {
-  info "Downloading SharpCollection"
-  chkfs "./windows/"
-  git -C ./windows/ clone https://github.com/Flangvik/SharpCollection
-  git -C ./windows/SharpCollection/ pull
+function update_submodules() {
+  info "Updating git submodules"
+  git submodule init
+  git submodule update --recursive --remote
 }
 
 # Package dedicated to the download of resources
@@ -294,30 +217,21 @@ function add_resources() {
   add_linenum
   add_linux_exploit_suggester
   add_mimikatz
-  add_nishang
-  add_powersploit
-  add_privesccheck
-  add_inveigh
   add_sharphound
   add_juicypotato
-  add_impacket_windows
   add_nc
   add_spoolsample
   add_diaghub
   add_lazagne
   add_sublinacl
-  add_mimipenguin
-  add_mimipy
   add_plink
   add_deepce
   add_webshells
-  add_mailsniper
   add_ysoserial_net
-  add_bitleaker
-  add_napper
   add_http-put-server
   add_azurehound
-  add_sharpcollection
+  update_submodules
 }
 
 add_resources
+success "Done updating Exegol-resources"

@@ -1,0 +1,40 @@
+[submodule "encrypted_disks/napper-for-tpm"]
+	path = encrypted_disks/napper-for-tpm
+	url = https://github.com/kkamagui/napper-for-tpm
+[submodule "encrypted_disks/bitleaker"]
+	path = encrypted_disks/bitleaker
+	url = https://github.com/kkamagui/bitleaker
+[submodule "linux/mimipy"]
+	path = linux/mimipy
+	url = https://github.com/n1nj4sec/mimipy
+[submodule "linux/mimipenguin"]
+	path = linux/mimipenguin
+	url = https://github.com/huntergregal/mimipenguin
+[submodule "webshells/PHP/p0wny-shell"]
+	path = webshells/PHP/p0wny-shell
+	url = https://github.com/flozz/p0wny-shell
+[submodule "windows/WinEnum"]
+	path = windows/WinEnum
+	url = https://github.com/mattiareggiani/WinEnum
+[submodule "windows/SharpCollection"]
+	path = windows/SharpCollection
+	url = https://github.com/Flangvik/SharpCollection
+[submodule "windows/PrivescCheck"]
+	path = windows/PrivescCheck
+	url = https://github.com/itm4n/PrivescCheck
+[submodule "windows/nishang"]
+	path = windows/nishang
+	url = https://github.com/samratashok/nishang.git
+[submodule "windows/MailSniper"]
+	path = windows/MailSniper
+	url = https://github.com/dafthack/MailSniper
+[submodule "windows/Inveigh"]
+	path = windows/Inveigh
+	url = https://github.com/Kevin-Robertson/Inveigh
+[submodule "windows/impacket-examples-windows"]
+	path = windows/impacket-examples-windows
+	url = https://github.com/maaaaz/impacket-examples-windows
+[submodule "windows/PowerSploit"]
+	path = windows/PowerSploit
+	url = https://github.com/PowerShellMafia/PowerSploit
+	branch = dev
