@@ -210,7 +210,6 @@ function update_submodules() {
 # Package dedicated to the download of resources
 function add_resources() {
   add_sysinternals
-  add_winenum
   add_pspy
   add_peass
   add_linux_smart_enumeration
