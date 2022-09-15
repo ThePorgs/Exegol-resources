@@ -118,7 +118,7 @@ function add_nc() {
   wget -q -O ./windows/nc.exe "https://gitlab.com/onemask/pentest-tools/-/raw/master/windows/nc.exe"
   info "Downloading nc for Linux"
   chkfs "./linux/"
-  wget -q -O ./linux/nc "http://www.stearns.org/nc/nc-static"
+  wget -q -O ./linux/nc "https://github.com/andrew-d/static-binaries/raw/master/binaries/linux/x86_64/ncat"
 }
 
 function add_spoolsample() {
@@ -173,7 +173,7 @@ function add_webshells() {
   info "Downloading webshells"
   chkfs "./webshells/PHP/wso-webshell/"
   wget -q -O ./webshells/PHP/wso-webshell/wso.php "https://raw.githubusercontent.com/mIcHyAmRaNe/wso-webshell/master/wso.php"
-  perl -i -pe's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php
+  sed -i 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php 2>/dev/null || perl -i -pe 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php
   echo 'exegol4thewin' > ./webshells/PHP/wso-webshell/password.txt
   # Setting password to exegol4thewin
   chkfs "./webshells/ASPX"
@@ -196,12 +196,6 @@ function add_http-put-server() {
   info "Downloading http-put-server for Python3"
   chkfs "./linux/"
   wget -q -O ./linux/http-put-server.py "https://gist.githubusercontent.com/mildred/67d22d7289ae8f16cae7/raw/214c213c9415da18a471d1ed04660022cce059ef/server.py"
-}
-
-function add_azurehound() {
-  info "Downloading AzureHound"
-  chkfs "./windows/"
-  wget -q -O ./windows/AzureHound.ps1 "https://raw.githubusercontent.com/BloodHoundAD/BloodHound/45c04e7292a44362af1031cc0d7bd3748433ac4d/Collectors/AzureHound.ps1"
 }
 
 function update_submodules() {
@@ -230,7 +224,6 @@ function add_resources() {
   add_webshells
   add_ysoserial_net
   add_http-put-server
-  add_azurehound
   update_submodules
 }
 
