@@ -198,6 +198,18 @@ function add_http-put-server() {
   wget -q -O ./linux/http-put-server.py "https://gist.githubusercontent.com/mildred/67d22d7289ae8f16cae7/raw/214c213c9415da18a471d1ed04660022cce059ef/server.py"
 }
 
+function add_chisel() {
+  info "Downloading Chisel"
+  chkfs "./windows/chisel/"
+  chkfs "./linux/chisel/"
+  url=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/jpillora/chisel/releases/latest)
+  version=${url##*v}
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_windows_amd64.gz" | gzip -d > ./windows/chisel/chisel64.exe
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_windows_386.gz" | gzip -d > ./windows/chisel/chisel32.exe
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_linux_amd64.gz" | gzip -d > ./linux/chisel/chisel64
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32
+}
+
 function update_submodules() {
   info "Updating git submodules"
   git submodule --quiet update --init --recursive --remote --merge
@@ -224,6 +236,7 @@ function add_resources() {
   add_webshells
   add_ysoserial_net
   add_http-put-server
+  add_chisel
   update_submodules
 }
 
