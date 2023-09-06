@@ -183,9 +183,9 @@ function add_webshells() {
 function add_ysoserial_net() {
   info "Downloading ysoserial"
   chkfs "./windows/"
-  url=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/pwntester/ysoserial.net/releases/latest)
-  version=${url##*v}
-  wget -q -O ./ysoserial_net.zip "https://github.com/pwntester/ysoserial.net/releases/latest/download/ysoserial-$version.zip"
+  URL=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/pwntester/ysoserial.net/releases/latest)
+  VERSION=${URL##*v}
+  wget -q -O ./ysoserial_net.zip "https://github.com/pwntester/ysoserial.net/releases/latest/download/ysoserial-$VERSION.zip"
   unzip -q -d ./windows/ ./ysoserial_net.zip
   rm -rf ./windows/ysoserial.net
   mv ./windows/Release/ ./windows/ysoserial.net
@@ -202,12 +202,12 @@ function add_chisel() {
   info "Downloading Chisel"
   chkfs "./windows/chisel/"
   chkfs "./linux/chisel/"
-  url=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/jpillora/chisel/releases/latest)
-  version=${url##*v}
-  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_windows_amd64.gz" | gzip -d > ./windows/chisel/chisel64.exe
-  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_windows_386.gz" | gzip -d > ./windows/chisel/chisel32.exe
-  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_linux_amd64.gz" | gzip -d > ./linux/chisel/chisel64
-  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${version}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32
+  URL=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/jpillora/chisel/releases/latest)
+  VERSION=${URL##*v}
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_amd64.gz" | gzip -d > ./windows/chisel/chisel64.exe
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_386.gz" | gzip -d > ./windows/chisel/chisel32.exe
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_amd64.gz" | gzip -d > ./linux/chisel/chisel64
+  wget -qO- "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32
 }
 
 function update_submodules() {
