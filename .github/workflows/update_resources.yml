@@ -1,0 +1,32 @@
+on: workflow_dispatch
+
+jobs:
+  init:
+    name: Initialize
+    runs-on: ubuntu-latest
+    outputs:
+      BRANCH_NAME: ${{ steps.varset.outputs.BRANCH_NAME }}
+    steps:
+      - name: Setting variables
+        id: varset
+        run: |
+          echo "BRANCH_NAME=update/$(date +%s)" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+  update:
+    needs: init
+    name: Updating resources
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout resources repo
+        uses: actions/checkout@v3
+      - name: Create new local branch from timestamp
+        run: git checkout -b ${{ needs.init.outputs.BRANCH_NAME }}
+      - name: Update resources
+        # TODO: need to improve that, make unit tests, etc.
+        run: ./update-resources.sh
+      - name: Staging changes
+        run: git add --all
+      - name: Committing changes
+        run: git commit -m "updating resources"
+      - name: Pushing new branch
+        run: git push --set-upstream origin ${{ needs.init.outputs.BRANCH_NAME }}
