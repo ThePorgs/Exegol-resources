@@ -28,15 +28,14 @@ jobs:
         run: ./update-resources.sh
       - name: Staging changes
         run: git add --all
+      - name: Configuring git identity
+        run: |
+          git config --local user.name "Github Actions"
+          git config --local user.email "actions@github.com"
       - name: Committing changes
         run: git commit -m "updating resources"
       - name: Pushing new branch
-        run: |
-          echo '[*] Setting git config'
-          git config --local user.name "Github Actions"
-          git config --local user.email "actions@github.com"
-          echo '[*] Pushing changes to new branch'
-          git push --set-upstream origin ${{ needs.init.outputs.BRANCH_NAME }}
+        run: git push --set-upstream origin ${{ needs.init.outputs.BRANCH_NAME }}
       - name: create pull request
         run: gh pr create --base "main" --head "${{ needs.init.outputs.BRANCH_NAME }}" --title "Resources update $(date '+%d-%b-%y')" --body 'Created by GitHub Action' --label "bot"
         env:
