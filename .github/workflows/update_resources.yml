@@ -1,6 +1,10 @@
 name: Resources update
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  schedule:
+    # running at 3pm on the first day of every month
+    - cron: '* 15 1 * *'
 
 jobs:
   init:
@@ -36,7 +40,7 @@ jobs:
         run: git commit -m "updating resources"
       - name: Pushing new branch
         run: git push --set-upstream origin ${{ needs.init.outputs.BRANCH_NAME }}
-      - name: create pull request
+      - name: Creating pull request
         run: gh pr create --base "main" --head "${{ needs.init.outputs.BRANCH_NAME }}" --title "Resources update $(date '+%d-%b-%y')" --body 'Created by GitHub Action' --label "bot"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
