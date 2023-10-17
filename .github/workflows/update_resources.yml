@@ -3,8 +3,8 @@ name: Resources update
 on:
   workflow_dispatch:
   schedule:
-    # running at 3pm on the first day of every month
-    # - cron: '* 15 1 * *'
+    # running at 3:00pm on the first day of every month
+    - cron: '0 15 1 * *'
   push:
     paths-ignore:
       - ".github/**"
