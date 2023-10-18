@@ -215,6 +215,27 @@ function update_submodules() {
   git submodule update --init --recursive --remote --merge
 }
 
+function add_ligolo-ng() {
+  info "Downloading ligolo-ng agents"
+  chkfs "./windows/ligolo-ng/"
+  chkfs "./linux/ligolo-ng/"
+  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/nicocha30/ligolo-ng/releases/latest)
+  VERSION=${URL##*v}
+  # AMD64 agent
+  wget -O- "https://github.com/nicocha30/ligolo-ng/releases/latest/download/ligolo-ng_agent_${VERSION}_linux_amd64.tar.gz"|tar -xzvf - -C ./linux/ligolo-ng
+  mv ./linux/ligolo-ng/agent ./linux/ligolo-ng/agent_linux_amd64
+  rm -rf ./linux/ligolo-ng/README.md ./linux/ligolo-ng/LICENSE
+  # ARM64 agent
+  wget -O- "https://github.com/nicocha30/ligolo-ng/releases/latest/download/ligolo-ng_agent_${VERSION}_linux_arm64.tar.gz"|tar -xzvf - -C ./linux/ligolo-ng
+  mv ./linux/ligolo-ng/agent ./linux/ligolo-ng/agent_linux_arm64
+  rm -rf ./linux/ligolo-ng/README.md ./linux/ligolo-ng/LICENSE
+  # Windows agent
+  wget -O ./windows/ligolo-ng/agent.zip "https://github.com/nicocha30/ligolo-ng/releases/latest/download/ligolo-ng_agent_${VERSION}_windows_amd64.zip"
+  unzip -o -d ./windows/ligolo-ng/agent64.exe ./windows/ligolo-ng/agent.zip
+  mv ./windows/ligolo-ng/agent64.exe/agent.exe ./windows/ligolo-ng/agent.exe
+  rm -rf ./windows/ligolo-ng/agent64.exe/ ./windows/ligolo-ng/agent.zip
+}
+
 # Package dedicated to the download of resources
 function add_resources() {
   add_sysinternals
@@ -237,6 +258,7 @@ function add_resources() {
   add_ysoserial_net
   add_http-put-server
   add_chisel
+  add_ligolo-ng
   update_submodules
 }
 
