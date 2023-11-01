@@ -183,9 +183,10 @@ function add_webshells() {
 function add_ysoserial_net() {
   info "Downloading ysoserial"
   chkfs "./windows/"
-  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/pwntester/ysoserial.net/releases/latest)
-  VERSION=${URL##*v}
-  wget -O ./ysoserial_net.zip "https://github.com/pwntester/ysoserial.net/releases/latest/download/ysoserial-$VERSION.zip"
+  #  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/pwntester/ysoserial.net/releases/latest)
+  #  VERSION=${URL##*v}
+  #  wget -O ./ysoserial_net.zip "https://github.com/pwntester/ysoserial.net/releases/latest/download/ysoserial-$VERSION.zip"
+  wget -O ./ysoserial_net.zip "https://github.com/pwntester/ysoserial.net/releases/download/v1.36/ysoserial-1dba9c4416ba6e79b6b262b758fa75e2ee9008e9.zip"
   unzip -d ./windows/ ./ysoserial_net.zip
   rm -v -r -f ./windows/ysoserial.net
   mv -v  ./windows/Release/ ./windows/ysoserial.net
