@@ -5,15 +5,9 @@ on:
   push:
     branches:
       - main
-      - resources_list
     paths-ignore:
-#      - ".github/**"
+      - ".github/**"
       - "**.md"
-
-# TODO for release
-#  - remove resources_list from target docs branch
-#  - remove resources_list fro mworkflow trigger branch
-#  - uncomment .github/ from workflow trigger paths-ignore
 
 jobs:
   export_resources:
@@ -38,7 +32,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: 'ThePorgs/Exegol-docs'
-          ref: "resources_list"
       - name: Adding list to repo and tables (overwriting previous)
         id: adding_list
         if: always() && steps.list_exists.outcome == 'success'
@@ -71,7 +64,7 @@ jobs:
           echo '[*] Staging change'
           git add --verbose source/assets/exegol_resources/resources_list.csv
           echo '[*] Commiting changes'
-          git commit --verbose -m "PIPELINE: tools list for ${{ inputs.IMAGE_TAG }}_${{ inputs.IMAGE_VERSION }}_${{ inputs.ARCH }}"
+          git commit --verbose -m "PIPELINE: resources list"
           echo '[*] Pulling latest changes from remote'
           git pull --rebase
           echo '[*] Pushing changes'
