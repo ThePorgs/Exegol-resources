@@ -1,0 +1,76 @@
+name: Export resources list
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - resources_list
+    paths-ignore:
+      - ".github/**"
+      - "**.md"
+
+# TODO for release
+#  - remove resources_list from target docs branch
+#  - remove resources_list fro mworkflow trigger branch
+#  - uncomment .github/ from workflow trigger paths-ignore
+
+jobs:
+  export_resources:
+    name: Export resources list
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Exegol-resources
+        uses: actions/checkout@v3
+      - name: Checkout Exegol-docs
+        uses: actions/checkout@v3
+        with:
+          repository: 'ThePorgs/Exegol-docs'
+          ref: "resources_list"
+      - name: (dbg) print resources_list.csv
+        id: list_exists
+        run: cat resources_list.csv
+      - name: Sanity check for resources_list.csv
+        if: success()
+        run: |
+          grep -qE '([^,]*,[^,]*){3,}' resources_list.csv \
+            && (echo '[-] Wrong number of columns on the following lines' \
+            && grep -oE '([^,]*,[^,]*){3,}' resources_list.csv || exit 1) \
+            || (echo '[+] List contains right number of columns' && exit 0)
+      - name: Adding list to repo and tables (overwriting previous)
+        id: adding_list
+        if: always() && steps.list_exists.outcome == 'success'
+        run: |
+          echo '[*] Moving resources list to (static) resources_list.csv'
+          mv -v resources_list.csv source/assets/exegol_resources/resources_list.csv
+      - name: (dbg) print resources_list.csv
+        if: always() && !contains(steps.adding_list.outcome, 'skipped')
+        id: final_list_exists
+        run: |
+          echo '[*] Printing resources_list.csv'
+          cat source/assets/exegol_resources/resources_list.csv
+      - name: Push to Exegol-docs
+        if: always() && steps.final_list_exists.outcome == 'success'
+        env:
+          EXEGOL_DOCS_SSH_DEPLOY_KEY: ${{ secrets.EXEGOL_DOCS_SSH_DEPLOY_KEY }}
+        run: |
+          echo '[*] Setting up git env for SSH use'
+          mkdir -p "$HOME/.ssh"
+          DEPLOY_KEY_FILE="$HOME/.ssh/deploy_key"
+          echo "${EXEGOL_DOCS_SSH_DEPLOY_KEY}" > "$DEPLOY_KEY_FILE"
+          chmod 600 "$DEPLOY_KEY_FILE"
+          SSH_KNOWN_HOSTS_FILE="$HOME/.ssh/known_hosts"
+          ssh-keyscan -H github.com > "$SSH_KNOWN_HOSTS_FILE"
+          export GIT_SSH_COMMAND="ssh -i "$DEPLOY_KEY_FILE" -o UserKnownHostsFile=$SSH_KNOWN_HOSTS_FILE"
+          GIT_CMD_REPOSITORY="git@github.com:ThePorgs/Exegol-docs.git"
+          echo '[*] Setting git config'
+          git config --local user.name "Github Actions"
+          git config --local user.email "actions@github.com"
+          echo '[*] Staging change'
+          git add --verbose source/assets/exegol_resources/resources_list.csv
+          echo '[*] Commiting changes'
+          git commit --verbose -m "PIPELINE: tools list for ${{ inputs.IMAGE_TAG }}_${{ inputs.IMAGE_VERSION }}_${{ inputs.ARCH }}"
+          echo '[*] Pulling latest changes from remote'
+          git pull --rebase
+          echo '[*] Pushing changes'
+          git push --verbose "$GIT_CMD_REPOSITORY"
