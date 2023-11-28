@@ -7,7 +7,7 @@ on:
       - main
       - resources_list
     paths-ignore:
-      - ".github/**"
+#      - ".github/**"
       - "**.md"
 
 # TODO for release
