@@ -24,7 +24,9 @@ jobs:
         uses: actions/checkout@v3
       - name: (dbg) print resources_list.csv
         id: list_exists
-        run: pwd && ls -alh && cat resources_list.csv && mv resources_list.csv /tmp/resources_list.csv
+        run: |
+          cat resources_list.csv
+          mv resources_list.csv /tmp/resources_list.csv
       - name: Sanity check for resources_list.csv
         if: success()
         run: |
@@ -42,7 +44,7 @@ jobs:
         if: always() && steps.list_exists.outcome == 'success'
         run: |
           echo '[*] Moving resources list to (static) resources_list.csv'
-          mv -v resources_list.csv source/assets/exegol_resources/resources_list.csv
+          mv -v /tmp/resources_list.csv source/assets/exegol_resources/resources_list.csv
       - name: (dbg) print resources_list.csv
         if: always() && !contains(steps.adding_list.outcome, 'skipped')
         id: final_list_exists
