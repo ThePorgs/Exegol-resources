@@ -29,7 +29,7 @@ jobs:
           ref: "resources_list"
       - name: (dbg) print resources_list.csv
         id: list_exists
-        run: cat resources_list.csv
+        run: pwd && ls -alh && cat resources_list.csv
       - name: Sanity check for resources_list.csv
         if: success()
         run: |
