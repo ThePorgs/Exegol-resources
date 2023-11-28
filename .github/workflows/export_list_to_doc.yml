@@ -22,14 +22,9 @@ jobs:
     steps:
       - name: Checkout Exegol-resources
         uses: actions/checkout@v3
-      - name: Checkout Exegol-docs
-        uses: actions/checkout@v3
-        with:
-          repository: 'ThePorgs/Exegol-docs'
-          ref: "resources_list"
       - name: (dbg) print resources_list.csv
         id: list_exists
-        run: pwd && ls -alh && cat resources_list.csv
+        run: pwd && ls -alh && cat resources_list.csv && mv resources_list.csv /tmp/resources_list.csv
       - name: Sanity check for resources_list.csv
         if: success()
         run: |
@@ -37,6 +32,11 @@ jobs:
             && (echo '[-] Wrong number of columns on the following lines' \
             && grep -oE '([^,]*,[^,]*){3,}' resources_list.csv || exit 1) \
             || (echo '[+] List contains right number of columns' && exit 0)
+      - name: Checkout Exegol-docs
+        uses: actions/checkout@v3
+        with:
+          repository: 'ThePorgs/Exegol-docs'
+          ref: "resources_list"
       - name: Adding list to repo and tables (overwriting previous)
         id: adding_list
         if: always() && steps.list_exists.outcome == 'success'
