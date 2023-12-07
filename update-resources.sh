@@ -125,6 +125,23 @@ function add_juicypotato() {
   add-to-list "JuicyPotato.exe,https://github.com/ohpe/juicy-potato,https://github.com/ohpe/juicy-potato"
 }
 
+function add_printspoofer() {
+  info "Downloading PrintSpoofer"
+  chkfs "./windows/"
+  wget -O ./windows/PrintSpoofer32.exe "https://github.com/itm4n/PrintSpoofer/releases/latest/download/PrintSpoofer32.exe"
+  wget -O ./windows/PrintSpoofer64.exe "https://github.com/itm4n/PrintSpoofer/releases/latest/download/PrintSpoofer64.exe"
+  add-to-list "PrintSpoofer,https://github.com/itm4n/PrintSpoofer,Abusing SeImpersonatePrivilege from LOCAL/NETWORK SERVICE"
+}
+
+function add_godpotato() {
+  info "Downloading GodPotato"
+  chkfs "./windows/"
+  wget -O ./windows/GodPotato-NET2.exe "https://github.com/BeichenDream/GodPotato/releases/latest/download/GodPotato-NET2.exe"
+  wget -O ./windows/GodPotato-NET35.exe "https://github.com/BeichenDream/GodPotato/releases/latest/download/GodPotato-NET35.exe"
+  wget -O ./windows/GodPotato-NET4.exe "https://github.com/BeichenDream/GodPotato/releases/latest/download/GodPotato-NET4.exe"
+  add-to-list "GodPotato,https://github.com/BeichenDream/GodPotato,Abusing SeImpersonatePrivilege on recent Windows OS (up to W11 and Server 2022)"
+}
+
 function add_nc() {
   info "Downloading nc for Windows"
   chkfs "./windows/"
@@ -286,6 +303,8 @@ function add_resources() {
   add_mimikatz
   add_sharphound
   add_juicypotato
+  add_printspoofer
+  add_godpotato
   add_nc
   add_spoolsample
   add_diaghub
