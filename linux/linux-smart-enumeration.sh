@@ -5,7 +5,7 @@
 # Author: Diego Blanco <diego.blanco@treitos.com>
 # GitHub: https://github.com/diego-treitos/linux-smart-enumeration
 #
-lse_version="4.13nw"
+lse_version="4.14nw"
 
 ##( Colors
 #
@@ -89,7 +89,7 @@ lse_procmon_lock=`mktemp`
 lse_cve_tmp=''
 
 # printf
-printf "%s" "$reset" | grep -q '\\' && alias printf="env printf"
+printf "$reset" | grep -q '\\' && alias printf="env printf"
 
 #( internal data
 lse_common_setuid="
@@ -262,7 +262,7 @@ cecho() { #(
     printf "%b" "$@"
   else
     # If color is disabled we remove it
-    printf "%b" "$@" | sed 's/\x1B\[[0-9;]\+[A-Za-z]//g'
+    printf "%b" "$@" | sed -r 's/(\x1B|\\e)\[[0-9;:]+[A-Za-z]//g'
   fi
 } #)
 lse_recolor() { #(
@@ -381,6 +381,8 @@ lse_test() { #(
   local deps="$5"
   # Variable name where to store the output
   local var="$6"
+  # Flags affecting the execution of certain tests
+  local flags="$7"
 
   # Define colors
   local l="${lred}!"
@@ -407,6 +409,12 @@ lse_test() { #(
   for i in $(seq $((${#id}+${#name}+10)) 79); do
     printf "."
   done
+
+  # Check if test should be skipped when running as root
+  if [ "$lse_user_id" -eq 0 ] && [ "$flags" = "rootskip" ]; then
+    cecho " ${grey}skip\n"
+    return 1
+  fi
 
   # Check dependencies
   local non_met_deps=""
@@ -482,6 +490,10 @@ lse_show_info() { #(
   echo
   cecho  "${green}=====================(${yellow} Current Output Verbosity Level: ${cyan}$lse_level ${green})======================${reset}"
   echo
+  if [ "$lse_user_id" -eq 0 ]; then
+    cecho  "${green}============(${yellow} Already running as ${red}root${yellow}, some tests will be skipped! ${green})============${reset}"
+    echo
+  fi
 } #)
 lse_serve() { #(
   # get port
@@ -778,7 +790,8 @@ lse_run_tests_filesystem() {
     # Add symlinks owned by the user (so the user can change where they point)
     find  / -path "$lse_home" -prune -o $lse_find_opts -type l -user $lse_user -print' \
     "" \
-    "lse_user_writable"
+    "lse_user_writable" \
+    "rootskip"
 
   #get setuid binaries
   lse_test "fst010" "1" \
@@ -906,7 +919,8 @@ lse_run_tests_filesystem() {
   #files owned by user
   lse_test "fst500" "2" \
     "Files owned by user '$lse_user'" \
-    'find / $lse_find_opts -user $lse_user -type f -exec ls -al {} \;'
+    'find / $lse_find_opts -user $lse_user -type f -exec ls -al {} \;' \
+    "" "" "rootskip"
 
   #check for SSH files anywhere
   lse_test "fst510" "2" \
@@ -1355,6 +1369,11 @@ lse_run_tests_software() {
   lse_test "sof170" "1" \
     "Can we access MongoDB databases without credentials?" \
     'echo "show dbs" | mongo --quiet | grep -E "(admin|config|local)"'
+
+  #find kerberos credentials
+  lse_test "sof180" "0" \
+    "Can we access any Kerberos credentials?" \
+    'find / $lse_find_opts -name "*.so" -prune -o \( -name "krb5cc*" -o -name "*.ccache" -o -name "*.kirbi" -o -name "*.keytab" \) -type f -readable -exec ls -lh {} +'
 
   #sudo version - check to see if there are any known vulnerabilities with this
   lse_test "sof500" "2" \
