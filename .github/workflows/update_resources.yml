@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout resources repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
       - name: Create new local branch from timestamp
         run: git checkout -b ${{ needs.init.outputs.BRANCH_NAME }}
       - name: Update resources

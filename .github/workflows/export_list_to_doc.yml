@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Exegol-resources
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
       - name: (dbg) print resources_list.csv
         id: list_exists
         run: |
@@ -29,7 +29,7 @@ jobs:
             && grep -oE '([^,]*,[^,]*){3,}' resources_list.csv || exit 1) \
             || (echo '[+] List contains right number of columns' && exit 0)
       - name: Checkout Exegol-docs
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
         with:
           repository: 'ThePorgs/Exegol-docs'
       - name: Adding list to repo and tables (overwriting previous)
