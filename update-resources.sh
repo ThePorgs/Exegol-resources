@@ -255,7 +255,7 @@ function add_chisel() {
 
 function add_rustscan() {
   info "Downloading Rustscan"
-  chkfs "./windows/rustscan"
+  chkfs "./windows/rustscan.exe"
   chkfs "./linux/rustscan"
   URL="https://github.com/RustScan/RustScan/releases"
   VERSION=$(curl "https://api.github.com/repos/RustScan/RustScan/tags" -s | jq -r '.[0].name')
