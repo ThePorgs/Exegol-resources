@@ -253,6 +253,18 @@ function add_chisel() {
   add-to-list "Chisel,https://github.com/jpillora/chisel,A fast TCP/UDP tunnel over HTTP"
 }
 
+function add_rustscan() {
+  info "Downloading Rustscan"
+  chkfs "./windows/rustscan"
+  chkfs "./linux/rustscan"
+  URL="https://github.com/RustScan/RustScan/releases"
+  VERSION=$(curl "https://api.github.com/repos/RustScan/RustScan/tags" -s | jq -r '.[0].name')
+  wget -O - "${URL}/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.tar.xz" | tar xJf - --strip-components 1 -C ./linux/
+  wget -O rustscan.zip "${URL}/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.zip"
+  unzip -j rustscan.zip -d ./windows/
+  add-to-list "Rustscan,https://github.com/RustScan/RustScan,The Modern Port Scanner"
+}
+
 function update_submodules() {
   info "Updating git submodules"
   git submodule update --init --recursive --remote --merge
