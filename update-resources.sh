@@ -328,6 +328,7 @@ function add_resources() {
   add_ysoserial_net
   add_http-put-server
   add_chisel
+  add_rustscan
   add_ligolo-ng
   update_submodules
 }
