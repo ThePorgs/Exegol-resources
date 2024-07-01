@@ -200,9 +200,21 @@ if __name__ == '__main__':
 
     # ------------------------------------------- Parse arguments -------------------------------------------
 
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
+    # # By default, launch all modules
+    # if len(sys.argv) == 1:
+    #     args = {
+    #         'verbose': 0, 
+    #         'quiet': False, 
+    #         'password': None, 
+    #         'write_normal': None, 
+    #         'write_json': None, 
+    #         'write_all': None, 
+    #         'output': '.', 
+    #         'auditType': 'all'
+    #     }
+    # else:
+    #     args = dict(parser.parse_args()._get_kwargs())
+    #     # arguments = parser.parse_args()
 
     args = dict(parser.parse_args()._get_kwargs())
     arguments = parser.parse_args()
