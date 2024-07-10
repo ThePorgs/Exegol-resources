@@ -32,6 +32,6 @@ exe = EXE(
         name='lazagne.exe',
         debug=False,
         strip=None,
-        upx=True,
+        upx=False,
         console=True
 )
