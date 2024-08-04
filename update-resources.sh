@@ -253,6 +253,16 @@ function add_chisel() {
   add-to-list "Chisel,https://github.com/jpillora/chisel,A fast TCP/UDP tunnel over HTTP"
 }
 
+function add_winpwn() {
+  info "Downloading WinPwn"
+  chkfs "./windows/WinPwn/"
+  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest)
+  VERSION=${URL##*/}
+  wget -O ./windows/WinPwn/WinPwn.exe "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.exe"
+  wget -O ./windows/WinPwn/WinPwn.ps1 "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.ps1"
+  add-to-list "WinPwn,https://github.com/S3cur3Th1sSh1t/WinPwn,Automation for AD pentesting"
+}
+
 function update_submodules() {
   info "Updating git submodules"
   git submodule update --init --recursive --remote --merge
@@ -316,6 +326,7 @@ function add_resources() {
   add_ysoserial_net
   add_http-put-server
   add_chisel
+  add_winpwn
   add_ligolo-ng
   update_submodules
 }
