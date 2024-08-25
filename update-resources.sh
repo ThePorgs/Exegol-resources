@@ -78,6 +78,7 @@ function add_peass() {
   wget -O ./windows/winPEAS/winPEASx64_ofs.exe "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx64_ofs.exe"
   wget -O ./windows/winPEAS/winPEASx86.exe "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx86.exe"
   wget -O ./windows/winPEAS/winPEASx86_ofs.exe "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx86_ofs.exe"
+  wget -O ./windows/winPEAS/winPEAS.ps1 "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/winPEAS/winPEASps1/winPEAS.ps1"
   add-to-list "PEASS-ng,https://github.com/carlospolop/PEASS-ng,Privilege Escalation Awesome Scripts SUITE"
 }
 
