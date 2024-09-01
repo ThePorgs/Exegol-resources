@@ -278,6 +278,7 @@ function update_submodules() {
   add-to-list "WinEnum,https://github.com/neox41/WinEnum,Script for Local Windows Enumeration"
   add-to-list "impacket-examples-windows,https://github.com/maaaaz/impacket-examples-windows,The great impacket example scripts compiled for Windows"
   add-to-list "nishang,https://github.com/samratashok/nishang,Offensive PowerShell for red team"
+  add-to-list "PowerSharpPack,https://github.com/S3cur3Th1sSh1t/PowerSharpPack,Many useful offensive CSharp Projects wraped into Powershell for easy usage."
 }
 
 function add_ligolo-ng() {
