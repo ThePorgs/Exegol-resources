@@ -38,3 +38,6 @@
 	path = windows/PowerSploit
 	url = https://github.com/PowerShellMafia/PowerSploit
 	branch = dev
+[submodule "windows/PowerSharpPack"]
+	path = windows/PowerSharpPack
+	url = https://github.com/S3cur3Th1sSh1t/PowerSharpPack
