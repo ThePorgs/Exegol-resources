@@ -82,6 +82,7 @@ function add_peass() {
   add-to-list "PEASS-ng,https://github.com/carlospolop/PEASS-ng,Privilege Escalation Awesome Scripts SUITE"
 }
 
+
 function add_linux_smart_enumeration() {
   info "Downloading Linux Smart Enumeration"
   chkfs "./linux/"
@@ -304,6 +305,20 @@ function add_ligolo-ng() {
   add-to-list "ligolo-ng,https://github.com/nicocha30/ligolo-ng,Advanced yet simple tunneling/pivoting tool that uses a TUN interface"
 }
 
+function add_pyexe() {
+  info "Downloading Pyexe"
+  chkfs "./windows/pyexe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py27-64.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py27.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py35-64.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py35.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py36-64.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py36.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py37-64.exe"
+  wget -O ./windows/pyexe "https://github.com/manthey/pyexe/releases/v18/download/py37.exe"
+  add-to-list "pyexe,https://github.com/manthey/pyexe,Create a single Windows executable for python 2.7, 3.5, 3.6, 3.7"
+}
+
 # Package dedicated to the download of resources
 function add_resources() {
   add_sysinternals
@@ -330,6 +345,7 @@ function add_resources() {
   add_chisel
   add_winpwn
   add_ligolo-ng
+  add_pyexe
   update_submodules
 }
 
