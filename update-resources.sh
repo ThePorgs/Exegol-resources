@@ -78,6 +78,7 @@ function add_peass() {
   wget -O ./windows/winPEAS/winPEASx64_ofs.exe "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx64_ofs.exe"
   wget -O ./windows/winPEAS/winPEASx86.exe "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx86.exe"
   wget -O ./windows/winPEAS/winPEASx86_ofs.exe "https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx86_ofs.exe"
+  wget -O ./windows/winPEAS/winPEAS.ps1 "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/winPEAS/winPEASps1/winPEAS.ps1"
   add-to-list "PEASS-ng,https://github.com/carlospolop/PEASS-ng,Privilege Escalation Awesome Scripts SUITE"
 }
 
@@ -265,6 +266,16 @@ function add_rustscan() {
   add-to-list "Rustscan,https://github.com/RustScan/RustScan,The Modern Port Scanner"
 }
 
+function add_winpwn() {
+  info "Downloading WinPwn"
+  chkfs "./windows/WinPwn/"
+  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest)
+  VERSION=${URL##*/}
+  wget -O ./windows/WinPwn/WinPwn.exe "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.exe"
+  wget -O ./windows/WinPwn/WinPwn.ps1 "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.ps1"
+  add-to-list "WinPwn,https://github.com/S3cur3Th1sSh1t/WinPwn,Automation for AD pentesting"
+}
+
 function update_submodules() {
   info "Updating git submodules"
   git submodule update --init --recursive --remote --merge
@@ -280,6 +291,7 @@ function update_submodules() {
   add-to-list "WinEnum,https://github.com/neox41/WinEnum,Script for Local Windows Enumeration"
   add-to-list "impacket-examples-windows,https://github.com/maaaaz/impacket-examples-windows,The great impacket example scripts compiled for Windows"
   add-to-list "nishang,https://github.com/samratashok/nishang,Offensive PowerShell for red team"
+  add-to-list "PowerSharpPack,https://github.com/S3cur3Th1sSh1t/PowerSharpPack,Many useful offensive CSharp Projects wraped into Powershell for easy usage."
 }
 
 function add_ligolo-ng() {
@@ -329,6 +341,7 @@ function add_resources() {
   add_http-put-server
   add_chisel
   add_rustscan
+  add_winpwn
   add_ligolo-ng
   update_submodules
 }
