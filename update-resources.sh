@@ -258,11 +258,24 @@ function add_rustscan() {
   info "Downloading Rustscan"
   chkfs "./windows/rustscan.exe"
   chkfs "./linux/rustscan"
-  URL="https://github.com/RustScan/RustScan/releases"
-  VERSION=$(curl "https://api.github.com/repos/RustScan/RustScan/tags" -s | jq -r '.[0].name')
-  wget -O - "${URL}/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.tar.xz" | tar xJf - --strip-components 1 -C ./linux/
-  wget -O rustscan.zip "${URL}/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.zip"
-  unzip -j rustscan.zip -d ./windows/
+
+  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/RustScan/RustScan/releases/latest)
+  VERSION=${URL##*/}
+
+  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.tar.xz" | tar xJf - --strip-components 1 -C ./linux/
+  if [[ $? -ne 0 ]]; then
+    wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.zip"
+    unzip -j rustscan.zip -d ./linux/
+    rm rustscan.zip
+  fi
+
+  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.tar.xz" | tar xJf - --strip-components 1 -C ./windows/
+  if [[ $? -ne 0 ]]; then
+    wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.zip"
+    unzip -j rustscan.zip -d ./windows/
+    rm rustscan.zip
+  fi
+
   add-to-list "Rustscan,https://github.com/RustScan/RustScan,The Modern Port Scanner"
 }
 
