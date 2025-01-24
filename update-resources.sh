@@ -254,6 +254,31 @@ function add_chisel() {
   add-to-list "Chisel,https://github.com/jpillora/chisel,A fast TCP/UDP tunnel over HTTP"
 }
 
+function add_rustscan() {
+  info "Downloading Rustscan"
+  chkfs "./windows/rustscan.exe"
+  chkfs "./linux/rustscan"
+
+  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/RustScan/RustScan/releases/latest)
+  VERSION=${URL##*/}
+
+  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.tar.xz" | tar xJf - --strip-components 1 -C ./linux/
+  if [[ $? -ne 0 ]]; then
+    wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.zip"
+    unzip -j rustscan.zip -d ./linux/
+    rm rustscan.zip
+  fi
+
+  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.tar.xz" | tar xJf - --strip-components 1 -C ./windows/
+  if [[ $? -ne 0 ]]; then
+    wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.zip"
+    unzip -j rustscan.zip -d ./windows/
+    rm rustscan.zip
+  fi
+
+  add-to-list "Rustscan,https://github.com/RustScan/RustScan,The Modern Port Scanner"
+}
+
 function add_winpwn() {
   info "Downloading WinPwn"
   chkfs "./windows/WinPwn/"
@@ -328,6 +353,7 @@ function add_resources() {
   add_ysoserial_net
   add_http-put-server
   add_chisel
+  add_rustscan
   add_winpwn
   add_ligolo-ng
   update_submodules
