@@ -256,23 +256,23 @@ function add_chisel() {
 
 function add_rustscan() {
   info "Downloading Rustscan"
-  chkfs "./windows/rustscan.exe"
-  chkfs "./linux/rustscan"
+  chkfs "./windows/rustscan/"
+  chkfs "./linux/rustscan/"
 
   URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/RustScan/RustScan/releases/latest)
   VERSION=${URL##*/}
 
-  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.tar.xz" | tar xJf - --strip-components 1 -C ./linux/
+  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.tar.xz" | tar xJf - --strip-components 1 -C ./linux/rustscan/
   if [[ $? -ne 0 ]]; then
     wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-linux.zip"
-    unzip -j rustscan.zip -d ./linux/
+    unzip -j rustscan.zip -d ./linux/rustscan/
     rm rustscan.zip
   fi
 
-  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.tar.xz" | tar xJf - --strip-components 1 -C ./windows/
+  wget -O - "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.tar.xz" | tar xJf - --strip-components 1 -C ./windows/rustscan/
   if [[ $? -ne 0 ]]; then
     wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/download/${VERSION}/rustscan-${VERSION}-x86_64-windows.zip"
-    unzip -j rustscan.zip -d ./windows/
+    unzip -j rustscan.zip -d ./windows/rustscan/
     rm rustscan.zip
   fi
 
