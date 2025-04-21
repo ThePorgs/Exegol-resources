@@ -255,6 +255,22 @@ function add_chisel() {
   add-to-list "Chisel,https://github.com/jpillora/chisel,A fast TCP/UDP tunnel over HTTP"
 }
 
+function add_rustscan() {
+  info "Downloading Rustscan"
+
+  # 32bits binary
+  wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/latest/download/x86-linux-rustscan.zip"
+  unzip -j rustscan.zip -d ./linux/
+  rm rustscan.zip
+
+  # Windows .exe
+  wget -O rustscan.zip "https://github.com/RustScan/RustScan/releases/latest/download/x86_64-windows-rustscan.exe.zip"
+  unzip -j rustscan.zip -d ./windows/
+  rm rustscan.zip
+
+  add-to-list "Rustscan,https://github.com/RustScan/RustScan,The Modern Port Scanner"
+}
+
 function add_winpwn() {
   info "Downloading WinPwn"
   chkfs "./windows/WinPwn/"
@@ -337,6 +353,7 @@ function add_resources() {
   add_ysoserial_net
   add_http-put-server
   add_chisel
+  add_rustscan
   add_winpwn
   add_ligolo-ng
   add_pyexe
