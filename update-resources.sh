@@ -82,6 +82,7 @@ function add_peass() {
   add-to-list "PEASS-ng,https://github.com/carlospolop/PEASS-ng,Privilege Escalation Awesome Scripts SUITE"
 }
 
+
 function add_linux_smart_enumeration() {
   info "Downloading Linux Smart Enumeration"
   chkfs "./linux/"
@@ -304,6 +305,14 @@ function add_ligolo-ng() {
   add-to-list "ligolo-ng,https://github.com/nicocha30/ligolo-ng,Advanced yet simple tunneling/pivoting tool that uses a TUN interface"
 }
 
+function add_pyexe() {
+  info "Downloading Pyexe"
+  local TAG
+  TAG=$(curl -s https://api.github.com/repos/manthey/pyexe/releases/latest | jq .tag_name | sed 's/"//g')
+  wget -O ./windows/py37-64.exe "https://github.com/manthey/pyexe/releases/download/$TAG/py37-64.exe"
+  add-to-list "pyexe,https://github.com/manthey/pyexe,Standalone Windows Python 3.7 64 bits executable"
+}
+
 # Package dedicated to the download of resources
 function add_resources() {
   add_sysinternals
@@ -330,6 +339,7 @@ function add_resources() {
   add_chisel
   add_winpwn
   add_ligolo-ng
+  add_pyexe
   update_submodules
 }
 
