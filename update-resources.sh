@@ -307,9 +307,10 @@ function add_ligolo-ng() {
 
 function add_pyexe() {
   info "Downloading Pyexe"
+  local TAG
   TAG=$(curl -s https://api.github.com/repos/manthey/pyexe/releases/latest | jq .tag_name | sed 's/"//g')
   wget -O ./windows/py37-64.exe "https://github.com/manthey/pyexe/releases/download/$TAG/py37-64.exe"
-  add-to-list "pyexe,https://github.com/manthey/pyexe,Create a single Windows executable for python 3.7 64 bits"
+  add-to-list "pyexe,https://github.com/manthey/pyexe,Standalone Windows Python 3.7 64 bits executable"
 }
 
 # Package dedicated to the download of resources
