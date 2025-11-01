@@ -41,3 +41,15 @@
 [submodule "windows/PowerSharpPack"]
 	path = windows/PowerSharpPack
 	url = https://github.com/S3cur3Th1sSh1t/PowerSharpPack
+[submodule "windows/MSSQLHound"]
+	path = windows/MSSQLHound
+	url = https://github.com/SpecterOps/MSSQLHound
+[submodule "windows/1PassHound"]
+	path = windows/1PassHound
+	url = https://github.com/SpecterOps/1PassHound
+[submodule "windows/SnowHound"]
+	path = windows/SnowHound
+	url = https://github.com/SpecterOps/SnowHound
+[submodule "windows/GitHound"]
+	path = windows/GitHound
+	url = https://github.com/SpecterOps/GitHound
