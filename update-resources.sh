@@ -113,6 +113,13 @@ function add_mimikatz() {
   add-to-list "Mimikatz,https://github.com/gentilkiwi/mimikatz,A little tool to play with Windows security"
 }
 
+function add_linikatz() {
+  info "Downloading linikatz"
+  chkfs "./linux/"
+  wget -O ./linux/linikatz.sh "https://raw.githubusercontent.com/CiscoCXSecurity/linikatz/master/linikatz.sh"
+  add-to-list "linikatz,https://github.com/CiscoCXSecurity/linikatz,Lightweight katz for Linux"
+}
+
 function add_sharphound() {
   info "Downloading SharpHound"
   chkfs "./windows/"
@@ -338,6 +345,7 @@ function add_resources() {
   add_linenum
   add_linux_exploit_suggester
   add_mimikatz
+  add_linikatz
   add_sharphound
   add_juicypotato
   add_printspoofer
