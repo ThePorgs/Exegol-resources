@@ -248,10 +248,16 @@ function add_chisel() {
   chkfs "./linux/chisel/"
   URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/jpillora/chisel/releases/latest)
   VERSION=${URL##*v}
-  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_amd64.gz" | gzip -d > ./windows/chisel/chisel64.exe
-  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_386.gz" | gzip -d > ./windows/chisel/chisel32.exe
+  wget -O /tmp/chisel64.zip "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_amd64.zip"
+  unzip -j /tmp/chisel64.zip -d ./tmp/
+  mv ./tmp/chisel.exe ./windows/chisel/chisel64.exe
+  rm /tmp/chisel64.zip
+  wget -O /tmp/chisel32.zip "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_386.zip"
+  unzip -j /tmp/chisel32.zip -d ./tmp/
+  mv ./tmp/chisel.exe ./windows/chisel/chisel32.exe
+  rm /tmp/chisel32.zip
   wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_amd64.gz" | gzip -d > ./linux/chisel/chisel64
-  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32
+  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32image.png
   add-to-list "Chisel,https://github.com/jpillora/chisel,A fast TCP/UDP tunnel over HTTP"
 }
 
@@ -276,8 +282,8 @@ function add_winpwn() {
   chkfs "./windows/WinPwn/"
   URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest)
   VERSION=${URL##*/}
-  wget -O ./windows/WinPwn/WinPwn.exe "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.exe"
-  wget -O ./windows/WinPwn/WinPwn.ps1 "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.ps1"
+  wget -O ./windows/WinPwn/WinPwn.exe "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/download/${VERSION}/WinPwn.exe"
+  wget -O ./windows/WinPwn/WinPwn.ps1 "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/download/${VERSION}/WinPwn.ps1"
   add-to-list "WinPwn,https://github.com/S3cur3Th1sSh1t/WinPwn,Automation for AD pentesting"
 }
 
