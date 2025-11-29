@@ -37,13 +37,13 @@ jobs:
         if: always() && steps.list_exists.outcome == 'success'
         run: |
           echo '[*] Moving resources list to (static) resources_list.csv'
-          mv -v /tmp/resources_list.csv source/assets/exegol_resources/resources_list.csv
+          mv -v /tmp/resources_list.csv docs/src/public/exegol_resources/resources_list.csv
       - name: (dbg) print resources_list.csv
         if: always() && !contains(steps.adding_list.outcome, 'skipped')
         id: final_list_exists
         run: |
           echo '[*] Printing resources_list.csv'
-          cat source/assets/exegol_resources/resources_list.csv
+          cat docs/src/public/exegol_resources/resources_list.csv
       - name: Push to Exegol-docs
         if: always() && steps.final_list_exists.outcome == 'success'
         env:
@@ -62,7 +62,7 @@ jobs:
           git config --local user.name "Github Actions"
           git config --local user.email "actions@github.com"
           echo '[*] Staging change'
-          git add --verbose source/assets/exegol_resources/resources_list.csv
+          git add --verbose docs/src/public/exegol_resources/resources_list.csv
           echo '[*] Commiting changes'
           git commit --verbose -m "PIPELINE: resources list"
           echo '[*] Pulling latest changes from remote'
