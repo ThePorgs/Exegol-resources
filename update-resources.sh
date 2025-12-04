@@ -287,6 +287,13 @@ function add_winpwn() {
   add-to-list "WinPwn,https://github.com/S3cur3Th1sSh1t/WinPwn,Automation for AD pentesting"
 }
 
+function add_domainpasswordspray() {
+  info "Downloading DomainPasswordSpray"
+  chkfs "./windows/DomainPasswordSpray/"
+  wget -O ./windows/DomainPasswordSpray/DomainPasswordSpray.ps1 "https://raw.githubusercontent.com/dafthack/DomainPasswordSpray/refs/heads/master/DomainPasswordSpray.ps1"
+  add-to-list "DomainPasswordSpray,https://github.com/dafthack/DomainPasswordSpray,Domain Password Spraying tool"
+}
+
 function update_submodules() {
   info "Updating git submodules"
   git submodule update --init --recursive --remote --merge
@@ -361,6 +368,7 @@ function add_resources() {
   add_chisel
   add_rustscan
   add_winpwn
+  add_domainpasswordspray
   add_ligolo-ng
   add_pyexe
   update_submodules
