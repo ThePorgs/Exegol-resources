@@ -340,9 +340,9 @@ function add_pingcastle() {
   chkfs "./windows/PingCastle/"
   URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/netwrix/pingcastle/releases/latest)
   VERSION=${URL##*/}
-  wget -O ./windows/PingCastle/PingCastle.exe "https://github.com/netwrix/pingcastle/releases/download/${VERSION}/PingCastle_${VERSION}.zip"
-  unzip -o -d ./windows/PingCastle ./windows/PingCastle/PingCastle.exe
-  rm -v ./windows/PingCastle/PingCastle.exe
+  wget -O ./windows/PingCastle/PingCastle.zip "https://github.com/netwrix/pingcastle/releases/download/${VERSION}/PingCastle_${VERSION}.zip"
+  unzip -o -d ./windows/PingCastle ./windows/PingCastle/PingCastle.zip
+  rm -v ./windows/PingCastle/PingCastle.zip
   add-to-list "PingCastle,https://github.com/netwrix/pingcastle,Active Directory security assessment tool"
 }
 
