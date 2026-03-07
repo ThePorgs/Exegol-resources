@@ -349,17 +349,6 @@ function add_pyexe() {
   add-to-list "pyexe,https://github.com/manthey/pyexe,Standalone Windows Python 3.7 64 bits executable"
 }
 
-function add_pingcastle() {
-  info "Downloading PingCastle"
-  chkfs "./windows/PingCastle/"
-  URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/netwrix/pingcastle/releases/latest)
-  VERSION=${URL##*/}
-  wget -O ./windows/PingCastle/PingCastle.zip "https://github.com/netwrix/pingcastle/releases/download/${VERSION}/PingCastle_${VERSION}.zip"
-  unzip -o -d ./windows/PingCastle ./windows/PingCastle/PingCastle.zip
-  rm -v ./windows/PingCastle/PingCastle.zip
-  add-to-list "PingCastle,https://github.com/netwrix/pingcastle,Active Directory security assessment tool"
-}
-
 # Package dedicated to the download of resources
 function add_resources() {
   add_sysinternals
@@ -390,7 +379,6 @@ function add_resources() {
   add_domainpasswordspray
   add_ligolo-ng
   add_pyexe
-  add_pingcastle
   update_submodules
 }
 
