@@ -1,3 +1,8 @@
+# Pinned GitHub Actions
+# - actions/checkout v4 @ 34e114876b0b11c390a56381ad16ebd13914f8d5
+#   - Repo: https://github.com/actions/checkout
+#   - Version: https://github.com/actions/checkout/tree/v4
+#   - Pinned: https://github.com/actions/checkout/commit/34e114876b0b11c390a56381ad16ebd13914f8d5
 name: Export resources list
 
 on:
@@ -15,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Exegol-resources
-        uses: actions/checkout@main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: (dbg) print resources_list.csv
         id: list_exists
         run: |
@@ -29,7 +34,7 @@ jobs:
             && grep -oE '([^,]*,[^,]*){3,}' resources_list.csv || exit 1) \
             || (echo '[+] List contains right number of columns' && exit 0)
       - name: Checkout Exegol-docs
-        uses: actions/checkout@main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           repository: 'ThePorgs/Exegol-docs'
       - name: Adding list to repo and tables (overwriting previous)

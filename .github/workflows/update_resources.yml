@@ -1,3 +1,8 @@
+# Pinned GitHub Actions
+# - actions/checkout v4 @ 34e114876b0b11c390a56381ad16ebd13914f8d5
+#   - Repo: https://github.com/actions/checkout
+#   - Version: https://github.com/actions/checkout/tree/v4
+#   - Pinned: https://github.com/actions/checkout/commit/34e114876b0b11c390a56381ad16ebd13914f8d5
 name: Resources update
 
 on:
@@ -24,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout resources repo
-        uses: actions/checkout@main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Create new local branch from timestamp
         run: git checkout -b ${{ needs.init.outputs.BRANCH_NAME }}
       - name: Update resources
