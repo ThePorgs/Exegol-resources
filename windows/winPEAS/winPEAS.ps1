@@ -148,6 +148,244 @@ function Get-ClipBoardText {
   }
 }
 
+function Get-DomainContext {
+  try {
+    return [System.DirectoryServices.ActiveDirectory.Domain]::GetComputerDomain()
+  }
+  catch {
+    return $null
+  }
+}
+
+function Convert-SidToName {
+  param(
+    $SidInput
+  )
+  if ($null -eq $SidInput) { return $null }
+  try {
+    if ($SidInput -is [System.Security.Principal.SecurityIdentifier]) {
+      $sidObject = $SidInput
+    }
+    else {
+      $sidObject = New-Object System.Security.Principal.SecurityIdentifier($SidInput)
+    }
+    return $sidObject.Translate([System.Security.Principal.NTAccount]).Value
+  }
+  catch {
+    try { return $sidObject.Value }
+    catch { return [string]$SidInput }
+  }
+}
+
+function Get-WeakDnsUpdateFindings {
+  param(
+    [System.DirectoryServices.ActiveDirectory.Domain]$DomainContext
+  )
+  if (-not $DomainContext) { return @() }
+  $domainDN = $DomainContext.GetDirectoryEntry().distinguishedName
+  $forestDN = $DomainContext.Forest.RootDomain.GetDirectoryEntry().distinguishedName
+  $paths = @(
+    "LDAP://CN=MicrosoftDNS,DC=DomainDnsZones,$domainDN",
+    "LDAP://CN=MicrosoftDNS,DC=ForestDnsZones,$forestDN",
+    "LDAP://CN=MicrosoftDNS,$domainDN"
+  )
+  $weakPatterns = @(
+    "authenticated users",
+    "everyone",
+    "domain users"
+  )
+  $dangerousRights = @("GenericAll", "GenericWrite", "CreateChild", "WriteProperty", "WriteDacl", "WriteOwner")
+  $findings = @()
+  foreach ($path in $paths) {
+    try {
+      $container = New-Object System.DirectoryServices.DirectoryEntry($path)
+      $null = $container.NativeGuid
+    }
+    catch { continue }
+    $searcher = New-Object System.DirectoryServices.DirectorySearcher($container)
+    $searcher.Filter = "(objectClass=dnsZone)"
+    $searcher.PageSize = 500
+    $results = $searcher.FindAll()
+    foreach ($result in $results) {
+      try {
+        $zoneEntry = $result.GetDirectoryEntry()
+        $zoneEntry.Options.SecurityMasks = [System.DirectoryServices.SecurityMasks]::Dacl
+        $sd = $zoneEntry.ObjectSecurity
+        foreach ($ace in $sd.Access) {
+          if ($ace.AccessControlType -ne 'Allow') { continue }
+          $principal = Convert-SidToName $ace.IdentityReference
+          if (-not $principal) { continue }
+          $principalLower = $principal.ToLower()
+          if (-not ($weakPatterns | Where-Object { $principalLower -like "*${_}*" })) { continue }
+          $rights = $ace.ActiveDirectoryRights.ToString()
+          if (-not ($dangerousRights | Where-Object { $rights -like "*${_}*" })) { continue }
+          $findings += [pscustomobject]@{
+            Zone      = $zoneEntry.Properties["name"].Value
+            Partition = $path.Split(',')[1]
+            Principal = $principal
+            Rights    = $rights
+          }
+        }
+      }
+      catch { continue }
+    }
+  }
+  return ($findings | Sort-Object Zone, Principal -Unique)
+}
+
+function Get-GmsaReadersReport {
+  param(
+    [System.DirectoryServices.ActiveDirectory.Domain]$DomainContext
+  )
+  if (-not $DomainContext) { return @() }
+  $domainDN = $DomainContext.GetDirectoryEntry().distinguishedName
+  try {
+    $searcher = New-Object System.DirectoryServices.DirectorySearcher
+    $searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$domainDN")
+    $searcher.Filter = "(&(objectClass=msDS-GroupManagedServiceAccount))"
+    $searcher.PageSize = 500
+    [void]$searcher.PropertiesToLoad.Add("sAMAccountName")
+    [void]$searcher.PropertiesToLoad.Add("msDS-GroupMSAMembership")
+    $results = $searcher.FindAll()
+  }
+  catch { return @() }
+  $report = @()
+  foreach ($result in $results) {
+    $name = $result.Properties["samaccountname"]
+    $blobs = $result.Properties["msds-groupmsamembership"]
+    if (-not $blobs) { continue }
+    $principals = @()
+    foreach ($blob in $blobs) {
+      try {
+        $raw = New-Object System.Security.AccessControl.RawSecurityDescriptor (, $blob)
+        foreach ($ace in $raw.DiscretionaryAcl) {
+          $sid = Convert-SidToName $ace.SecurityIdentifier
+          if ($sid) { $principals += $sid }
+        }
+      }
+      catch { continue }
+    }
+    if ($principals.Count -eq 0) { continue }
+    $principals = $principals | Sort-Object -Unique
+    $weak = $principals | Where-Object { $_ -match 'Domain Users|Authenticated Users|Everyone' }
+    $report += [pscustomobject]@{
+      Account        = ($name | Select-Object -First 1)
+      Allowed        = ($principals -join ", ")
+      WeakPrincipals = if ($weak) { $weak -join ", " } else { "" }
+    }
+  }
+  return $report
+}
+
+function Get-PrivilegedSpnTargets {
+  param(
+    [System.DirectoryServices.ActiveDirectory.Domain]$DomainContext
+  )
+  if (-not $DomainContext) { return @() }
+  $domainDN = $DomainContext.GetDirectoryEntry().distinguishedName
+  $keywords = @(
+    "Domain Admin",
+    "Enterprise Admin",
+    "Administrators",
+    "Exchange",
+    "IT_",
+    "Schema Admin",
+    "Account Operator",
+    "Server Operator",
+    "Backup Operator",
+    "DnsAdmin"
+  )
+  try {
+    $searcher = New-Object System.DirectoryServices.DirectorySearcher
+    $searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$domainDN")
+    $searcher.Filter = "(&(objectClass=user)(servicePrincipalName=*))"
+    $searcher.PageSize = 500
+    [void]$searcher.PropertiesToLoad.Add("sAMAccountName")
+    [void]$searcher.PropertiesToLoad.Add("memberOf")
+    $results = $searcher.FindAll()
+  }
+  catch { return @() }
+  $findings = @()
+  foreach ($res in $results) {
+    $groups = $res.Properties["memberof"]
+    if (-not $groups) { continue }
+    $matchedGroups = @()
+    foreach ($group in $groups) {
+      $cn = ($group -split ',')[0] -replace '^CN=',''
+      if ($keywords | Where-Object { $cn -like "*${_}*" }) {
+        $matchedGroups += $cn
+      }
+    }
+    if ($matchedGroups.Count -gt 0) {
+      $findings += [pscustomobject]@{
+        User   = ($res.Properties["samaccountname"] | Select-Object -First 1)
+        Groups = ($matchedGroups | Sort-Object -Unique) -join ', '
+      }
+    }
+  }
+  return ($findings | Sort-Object User | Select-Object -First 12)
+}
+
+function Get-NtlmPolicySummary {
+  try {
+    $msv = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0' -ErrorAction Stop
+  }
+  catch { return $null }
+  $lsa = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -ErrorAction SilentlyContinue
+  return [pscustomobject]@{
+    RestrictReceiving = $msv.RestrictReceivingNTLMTraffic
+    RestrictSending   = $msv.RestrictSendingNTLMTraffic
+    LmCompatibility   = if ($lsa) { $lsa.LmCompatibilityLevel } else { $null }
+  }
+}
+
+function Get-TimeSkewInfo {
+  param(
+    [System.DirectoryServices.ActiveDirectory.Domain]$DomainContext
+  )
+  if (-not $DomainContext) { return $null }
+  try {
+    $pdc = $DomainContext.PdcRoleOwner.Name
+  }
+  catch { return $null }
+  try {
+    $stripchart = w32tm /stripchart /computer:$pdc /dataonly /samples:3 2>$null
+    $sample = $stripchart | Where-Object { $_ -match ',' } | Select-Object -Last 1
+    if (-not $sample) { return $null }
+    $parts = $sample.Split(',')
+    if ($parts.Count -lt 2) { return $null }
+    $offsetString = $parts[1].Trim().TrimEnd('s')
+    [double]$offsetSeconds = 0
+    if (-not [double]::TryParse($offsetString, [ref]$offsetSeconds)) { return $null }
+    return [pscustomobject]@{
+      Source        = $pdc
+      OffsetSeconds = $offsetSeconds
+      RawSample     = $sample
+    }
+  }
+  catch {
+    return $null
+  }
+}
+
+function Get-AdcsSchannelInfo {
+  $info = [ordered]@{
+    MappingValue = $null
+    UpnMapping   = $false
+    ServiceState = $null
+  }
+  try {
+    $schannel = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL' -Name 'CertificateMappingMethods' -ErrorAction Stop
+    $info.MappingValue = $schannel.CertificateMappingMethods
+    if (($schannel.CertificateMappingMethods -band 0x4) -eq 0x4) { $info.UpnMapping = $true }
+  }
+  catch { }
+  $svc = Get-Service -Name certsrv -ErrorAction SilentlyContinue
+  if ($svc) { $info.ServiceState = $svc.Status }
+  return [pscustomobject]$info
+}
+
+
 function Search-Excel {
   [cmdletbinding()]
   Param (
@@ -557,6 +795,7 @@ Write-Host -ForegroundColor Blue   "Indicates title"
 
 
 Write-Host "You can find a Windows local PE Checklist here: https://book.hacktricks.wiki/en/windows-hardening/checklist-windows-privilege-escalation.html" -ForegroundColor Yellow
+Write-Host "Best Linux PE & Hardening course: https://hacktricks-training.com/courses/lhe/" -ForegroundColor Yellow
 #write-host  "Creating Dynamic lists, this could take a while, please wait..."
 #write-host  "Loading sensitive_files yaml definitions file..."
 #write-host  "Loading regexes yaml definitions file..."
@@ -577,10 +816,37 @@ systeminfo.exe
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }
 Write-Host -ForegroundColor Blue "=========|| WINDOWS HOTFIXES"
-Write-Host "=| Check if windows is vulnerable with Watson https://github.com/rasta-mouse/Watson" -ForegroundColor Yellow
-Write-Host "Possible exploits (https://github.com/codingo/OSCP-2/blob/master/Windows/WinPrivCheck.bat)" -ForegroundColor Yellow
+Write-Host "=| Check missing patches with the embedded windows vulnerability definitions" -ForegroundColor Yellow
 $Hotfix = Get-HotFix | Sort-Object -Descending -Property InstalledOn -ErrorAction SilentlyContinue | Select-Object HotfixID, Description, InstalledBy, InstalledOn
 $Hotfix | Format-Table -AutoSize
+
+
+# PrintNightmare PointAndPrint policy checks
+Write-Host ""
+if ($TimeStamp) { TimeElapsed }
+Write-Host -ForegroundColor Blue "=========|| PRINTNIGHTMARE POINTANDPRINT POLICY"
+$pnKey = "HKLM:\Software\Policies\Microsoft\Windows NT\Printers\PointAndPrint"
+if (Test-Path $pnKey) {
+  $pn = Get-ItemProperty -Path $pnKey -ErrorAction SilentlyContinue
+  $restrict = $pn.RestrictDriverInstallationToAdministrators
+  $noWarn = $pn.NoWarningNoElevationOnInstall
+  $updatePrompt = $pn.UpdatePromptSettings
+
+  Write-Host "RestrictDriverInstallationToAdministrators: $restrict"
+  Write-Host "NoWarningNoElevationOnInstall: $noWarn"
+  Write-Host "UpdatePromptSettings: $updatePrompt"
+
+  $hasAllValues = ($null -ne $restrict) -and ($null -ne $noWarn) -and ($null -ne $updatePrompt)
+  if (-not $hasAllValues) {
+    Write-Host "PointAndPrint policy values are missing or not configured" -ForegroundColor Gray
+  } elseif (($restrict -eq 0) -and ($noWarn -eq 1) -and ($updatePrompt -eq 2)) {
+    Write-Host "Potentially vulnerable to PrintNightmare misconfiguration" -ForegroundColor Red
+  } else {
+    Write-Host "PointAndPrint policy is not in the known risky configuration" -ForegroundColor Green
+  }
+} else {
+  Write-Host "PointAndPrint policy key not found" -ForegroundColor Gray
+}
 
 
 #Show all unique updates installed
@@ -1226,6 +1492,95 @@ Write-Host -ForegroundColor Blue "=========|| LISTENING PORTS"
 Start-Process NETSTAT.EXE -ArgumentList "-ano" -Wait -NoNewWindow
 
 
+######################## ACTIVE DIRECTORY / IDENTITY MISCONFIG CHECKS ########################
+Write-Host ""
+if ($TimeStamp) { TimeElapsed }
+Write-Host -ForegroundColor Blue "=========|| ACTIVE DIRECTORY / IDENTITY MISCONFIG CHECKS"
+
+$domainContext = Get-DomainContext
+if (-not $domainContext) {
+  Write-Host "Host appears to be in a workgroup or the AD context could not be resolved. Skipping domain-specific checks." -ForegroundColor DarkGray
+}
+else {
+  $ntlmStatus = Get-NtlmPolicySummary
+  if ($ntlmStatus) {
+    $recvValue = if ($ntlmStatus.RestrictReceiving -ne $null) { [int]$ntlmStatus.RestrictReceiving } else { -1 }
+    $sendValue = if ($ntlmStatus.RestrictSending -ne $null) { [int]$ntlmStatus.RestrictSending } else { -1 }
+    $lmValue = if ($ntlmStatus.LmCompatibility -ne $null) { [int]$ntlmStatus.LmCompatibility } else { -1 }
+    $ntlmMsg = "Receiving:{0} Sending:{1} LMCompat:{2}" -f $recvValue, $sendValue, $lmValue
+    if ($recvValue -ge 1 -or $sendValue -ge 1 -or $lmValue -ge 5) {
+      Write-Host "[!] NTLM is restricted/disabled ($ntlmMsg). Expect Kerberos-only auth paths (sync time before Kerberoasting)." -ForegroundColor Yellow
+    }
+    else {
+      Write-Host "[i] NTLM restrictions appear relaxed ($ntlmMsg)."
+    }
+  }
+
+  $timeSkew = Get-TimeSkewInfo -DomainContext $domainContext
+  if ($timeSkew) {
+    $offsetAbs = [math]::Abs($timeSkew.OffsetSeconds)
+    $timeMsg = "Offset vs {0}: {1:N3}s (sample: {2})" -f $timeSkew.Source, $timeSkew.OffsetSeconds, $timeSkew.RawSample.Trim()
+    if ($offsetAbs -gt 5) {
+      Write-Host "[!] Significant Kerberos time skew detected - $timeMsg" -ForegroundColor Yellow
+    }
+    else {
+      Write-Host "[i] Kerberos time offset looks OK - $timeMsg"
+    }
+  }
+
+  $dnsFindings = @(Get-WeakDnsUpdateFindings -DomainContext $domainContext)
+  if ($dnsFindings.Count -gt 0) {
+    Write-Host "[!] AD-integrated DNS zones allow low-priv principals to write records (dynamic DNS hijack / service MITM risk)." -ForegroundColor Yellow
+    $dnsFindings | Format-Table Zone,Partition,Principal,Rights -AutoSize | Out-String | Write-Host
+  }
+  else {
+    Write-Host "[i] No obvious insecure dynamic DNS ACLs found with current privileges."
+  }
+
+  $spnFindings = @(Get-PrivilegedSpnTargets -DomainContext $domainContext)
+  if ($spnFindings.Count -gt 0) {
+    Write-Host "[!] High-value SPN accounts identified (prime Kerberoast targets):" -ForegroundColor Yellow
+    $spnFindings | Format-Table User,Groups -AutoSize | Out-String | Write-Host
+  }
+  else {
+    Write-Host "[i] No privileged SPN users detected via quick LDAP search."
+  }
+
+  $gmsaReport = @(Get-GmsaReadersReport -DomainContext $domainContext)
+  if ($gmsaReport.Count -gt 0) {
+    $weakGmsa = $gmsaReport | Where-Object { $_.WeakPrincipals -ne "" }
+    if ($weakGmsa) {
+      Write-Host "[!] gMSA passwords readable by low-priv groups/principals: " -ForegroundColor Yellow
+      $weakGmsa | Select-Object Account, WeakPrincipals | Format-Table -AutoSize | Out-String | Write-Host
+    }
+    else {
+      Write-Host "[i] gMSA accounts discovered (review allowed readers below)."
+      $gmsaReport | Select-Object Account, Allowed | Sort-Object Account | Select-Object -First 5 | Format-Table -Wrap | Out-String | Write-Host
+    }
+  }
+  else {
+    Write-Host "[i] No gMSA objects found via LDAP."
+  }
+
+  $adcsInfo = Get-AdcsSchannelInfo
+  if ($adcsInfo.MappingValue -ne $null) {
+    $hex = ('0x{0:X}' -f [int]$adcsInfo.MappingValue)
+    if ($adcsInfo.UpnMapping) {
+      Write-Host ("[!] Schannel CertificateMappingMethods={0} (UPN mapping allowed) - ESC10 certificate abuse possible if you can edit another user's UPN." -f $hex) -ForegroundColor Yellow
+    }
+    else {
+      Write-Host ("[i] Schannel CertificateMappingMethods={0} (UPN mapping flag not set)." -f $hex)
+    }
+    if ($adcsInfo.ServiceState) {
+      Write-Host ("[i] AD CS service state: {0}" -f $adcsInfo.ServiceState)
+    }
+  }
+  else {
+    Write-Host "[i] Could not read Schannel certificate mapping configuration." -ForegroundColor DarkGray
+  }
+}
+
+
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }
 Write-Host -ForegroundColor Blue "=========|| ARP Table"
@@ -1322,8 +1677,8 @@ if ($TimeStamp) { TimeElapsed }
 Write-Host -ForegroundColor Blue "=========|| WHOAMI INFO"
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }
-Write-Host -ForegroundColor Blue "=========|| Check Token access here: https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens.html#abusing-tokens" -ForegroundColor yellow
-Write-Host -ForegroundColor Blue "=========|| Check if you are inside the Administrators group or if you have enabled any token that can be use to escalate privileges like SeImpersonatePrivilege, SeAssignPrimaryPrivilege, SeTcbPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeCreateTokenPrivilege, SeLoadDriverPrivilege, SeTakeOwnershipPrivilege, SeDebbugPrivilege"
+Write-Host -ForegroundColor Blue "=========|| Check Token access here: https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens.html#abusing-tokens"
+Write-Host -ForegroundColor Blue "=========|| Check if you are inside the Administrators group or if you have enabled any token that can be use to escalate privileges like SeImpersonatePrivilege, SeAssignPrimaryPrivilege, SeTcbPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeCreateTokenPrivilege, SeLoadDriverPrivilege, SeTakeOwnershipPrivilege, SeDebugPrivilege"
 Write-Host "https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#users--groups" -ForegroundColor Yellow
 Start-Process whoami.exe -ArgumentList "/all" -Wait -NoNewWindow
 
@@ -1421,6 +1776,12 @@ Write-Host -ForegroundColor Blue "=========|| Cached Credentials Check"
 Write-Host "https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#windows-vault" -ForegroundColor Yellow 
 cmdkey.exe /list
 
+# Check for UWP PasswordVault / Credential Locker Check
+Write-Host ""
+if ($TimeStamp) { TimeElapsed }
+Write-Host -ForegroundColor Blue "=========|| UWP PasswordVault / Credential Locker Check"
+Write-Host "https://hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#uwp-passwordvault--credential-locker" -ForegroundColor Yellow 
+[void][Windows.Security.Credentials.PasswordVault,Windows.Security.Credentials,ContentType=WindowsRuntime]; $v = New-Object Windows.Security.Credentials.PasswordVault; $v.RetrieveAll() | ForEach-Object { try { $_.RetrievePassword(); $_ } catch {} } | Select-Object Resource, UserName, Password | Format-List
 
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }

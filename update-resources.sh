@@ -113,6 +113,13 @@ function add_mimikatz() {
   add-to-list "Mimikatz,https://github.com/gentilkiwi/mimikatz,A little tool to play with Windows security"
 }
 
+function add_linikatz() {
+  info "Downloading linikatz"
+  chkfs "./linux/"
+  wget -O ./linux/linikatz.sh "https://raw.githubusercontent.com/CiscoCXSecurity/linikatz/master/linikatz.sh"
+  add-to-list "linikatz,https://github.com/CiscoCXSecurity/linikatz,Lightweight katz for Linux"
+}
+
 function add_sharphound() {
   info "Downloading SharpHound"
   chkfs "./windows/"
@@ -248,10 +255,16 @@ function add_chisel() {
   chkfs "./linux/chisel/"
   URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/jpillora/chisel/releases/latest)
   VERSION=${URL##*v}
-  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_amd64.gz" | gzip -d > ./windows/chisel/chisel64.exe
-  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_386.gz" | gzip -d > ./windows/chisel/chisel32.exe
+  wget -O /tmp/chisel64.zip "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_amd64.zip"
+  unzip -j /tmp/chisel64.zip -d ./tmp/
+  mv ./tmp/chisel.exe ./windows/chisel/chisel64.exe
+  rm /tmp/chisel64.zip
+  wget -O /tmp/chisel32.zip "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_windows_386.zip"
+  unzip -j /tmp/chisel32.zip -d ./tmp/
+  mv ./tmp/chisel.exe ./windows/chisel/chisel32.exe
+  rm /tmp/chisel32.zip
   wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_amd64.gz" | gzip -d > ./linux/chisel/chisel64
-  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32
+  wget -O - "https://github.com/jpillora/chisel/releases/latest/download/chisel_${VERSION}_linux_386.gz" | gzip -d > ./linux/chisel/chisel32image.png
   add-to-list "Chisel,https://github.com/jpillora/chisel,A fast TCP/UDP tunnel over HTTP"
 }
 
@@ -276,9 +289,16 @@ function add_winpwn() {
   chkfs "./windows/WinPwn/"
   URL=$(curl --location --silent --output /dev/null --write-out %{url_effective} https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest)
   VERSION=${URL##*/}
-  wget -O ./windows/WinPwn/WinPwn.exe "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.exe"
-  wget -O ./windows/WinPwn/WinPwn.ps1 "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/latest/download/${VERSION}/WinPwn.ps1"
+  wget -O ./windows/WinPwn/WinPwn.exe "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/download/${VERSION}/WinPwn.exe"
+  wget -O ./windows/WinPwn/WinPwn.ps1 "https://github.com/S3cur3Th1sSh1t/WinPwn/releases/download/${VERSION}/WinPwn.ps1"
   add-to-list "WinPwn,https://github.com/S3cur3Th1sSh1t/WinPwn,Automation for AD pentesting"
+}
+
+function add_domainpasswordspray() {
+  info "Downloading DomainPasswordSpray"
+  chkfs "./windows/DomainPasswordSpray/"
+  wget -O ./windows/DomainPasswordSpray/DomainPasswordSpray.ps1 "https://raw.githubusercontent.com/dafthack/DomainPasswordSpray/refs/heads/master/DomainPasswordSpray.ps1"
+  add-to-list "DomainPasswordSpray,https://github.com/dafthack/DomainPasswordSpray,Domain Password Spraying tool"
 }
 
 function update_submodules() {
@@ -338,6 +358,7 @@ function add_resources() {
   add_linenum
   add_linux_exploit_suggester
   add_mimikatz
+  add_linikatz
   add_sharphound
   add_juicypotato
   add_printspoofer
@@ -355,6 +376,7 @@ function add_resources() {
   add_chisel
   add_rustscan
   add_winpwn
+  add_domainpasswordspray
   add_ligolo-ng
   add_pyexe
   update_submodules
