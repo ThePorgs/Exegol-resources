@@ -9,6 +9,10 @@ REM :: Code by carlospolop; Re-Write by ThisLimn0
 REM Registry scan of other drives besides 
 REM /////true or false
 SET long=false
+SET "PEAS_HAS_ROBOCOPY=false"
+where robocopy >nul 2>&1 && SET "PEAS_HAS_ROBOCOPY=true"
+SET "PEAS_USERS_ROOT=%SystemDrive%\Users"
+IF NOT EXIST "%PEAS_USERS_ROOT%\" SET "PEAS_USERS_ROOT=%SystemDrive%\Documents and Settings"
 
 REM Check if the current path contains spaces
 SET "CurrentFolder=%~dp0"
@@ -87,7 +91,7 @@ IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS16-032 patch is NOT installed! (Vuln
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB2393802" 1>NUL
 IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS11-011 patch is NOT installed! (Vulns: XP/SP2/3,2K3/SP2,2K8/SP2,Vista/SP1/2,7/SP0-WmiTraceMessageVa)
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB982799" 1>NUL
-IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS10-59 patch is NOT installed! (Vulns: 2K8,Vista,7/SP0-Chimichurri)
+IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS10-059 review candidate: KB982799 was not found in WMIC QFE output (which may be unavailable or incomplete); confirm affected OS, service pack, superseding updates and local logon. No vulnerability verdict.
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB979683" 1>NUL
 IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS10-21 patch is NOT installed! (Vulns: 2K/SP4,XP/SP2/3,2K3/SP2,2K8/SP2,Vista/SP0/1/2,7/SP0-Win Kernel)
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB2305420" 1>NUL
@@ -118,8 +122,8 @@ IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul
 IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS14-040 patch is NOT installed! (Vulns: 2K3/SP2,2K8/SP2,Vista/SP2,7/SP1-afd.sys Dangling Pointer)
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB3136041" 1>NUL
 IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS16-016 patch is NOT installed! (Vulns: 2K8/SP1/2,Vista/SP2,7/SP1-WebDAV to Address)
-IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB3057191" 1>NUL
-IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS15-051 patch is NOT installed! (Vulns: 2K3/SP2,2K8/SP2,Vista/SP2,7/SP1-win32k.sys)
+IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB3045171" 1>NUL
+IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS15-051 (KB3045171) not found in WMIC QFE output (which may be unavailable or incomplete); verify supported OS/service pack and superseding updates.
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB2989935" 1>NUL
 IF "%expl%" == "yes" IF errorlevel 1 ECHO.MS14-070 patch is NOT installed! (Vulns: 2K3/SP2-TCP/IP)
 IF "%expl%" == "yes" wmic qfe get Caption,Description,HotFixID,InstalledOn 2>nul | findstr /C:"KB2778930" 1>NUL
@@ -407,7 +411,8 @@ CALL :T_Progress 1
 
 :BasicUserInfo
 CALL :ColorLine "%E%32m[*]%E%97m BASIC USER INFO
-ECHO.   [i] Check if you are inside the Administrators group or if you have enabled any token that can be use to escalate privileges like SeImpersonatePrivilege, SeAssignPrimaryPrivilege, SeTcbPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeCreateTokenPrivilege, SeLoadDriverPrivilege, SeTakeOwnershipPrivilege, SeDebugPrivilege
+ECHO.   [i] Check if you are inside the Administrators group or if you have enabled any token that can be use to escalate privileges like SeImpersonatePrivilege, SeAssignPrimaryPrivilege, SeTcbPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeCreateTokenPrivilege, SeLoadDriverPrivilege, SeTakeOwnershipPrivilege, SeDebugPrivilege, SeManageVolumePrivilege, SeEnableDelegationPrivilege
+ECHO.   [i] If SeEnableDelegationPrivilege is enabled in this process token, review domain machine-account quota and effective computer-object rights; the privilege alone does not prove a delegation path.
 ECHO.   [?] https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#users--groups
 ECHO.
 CALL :ColorLine " %E%33m[+]%E%97m CURRENT USER"
@@ -452,7 +457,7 @@ CALL :T_Progress 1
 :CurrentClipboard
 CALL :ColorLine " %E%33m[+]%E%97m CURRENT CLIPBOARD"
 ECHO.   [i] Any passwords inside the clipboard?
-powershell -command "Get-Clipboard" 2>nul
+powershell -NoProfile -Command "$clip = Start-Job { Get-Clipboard }; if (Wait-Job $clip -Timeout 5) { Receive-Job $clip } else { Stop-Job $clip; Write-Output '[i] Clipboard query timed out after 5 seconds.' }; Remove-Job $clip -Force -ErrorAction SilentlyContinue" 2>nul
 ECHO.
 CALL :T_Progress 1
 
@@ -501,9 +506,9 @@ ECHO.
 CALL :T_Progress 1
 
 :CheckRegistryModificationAbilities
-CALL :ColorLine " %E%33m[+]%E%97m CHECK IF YOU CAN MODIFY ANY SERVICE REGISTRY"
+CALL :ColorLine " %E%33m[+]%E%97m SERVICE REGISTRY PERMISSIONS"
 ECHO.   [?] https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#services
-for /f %%a in ('reg query hklm\system\currentcontrolset\services') do del %temp%\reg.hiv >nul 2>&1 & reg save %%a %temp%\reg.hiv >nul 2>&1 && reg restore %%a %temp%\reg.hiv >nul 2>&1 && ECHO.You can modify %%a
+ECHO.   [i] Effective service registry write access is unknown in this batch check; inspect key ACLs with the winPEAS executable or a trusted read-only ACL viewer.
 ECHO.
 CALL :T_Progress 1
 
@@ -512,10 +517,29 @@ CALL :ColorLine " %E%33m[+]%E%97m UNQUOTED SERVICE PATHS"
 ECHO.   [i] When the path is not quoted (ex: C:\Program files\soft\new folder\exec.exe) Windows will try to execute first 'C:\Program.exe', then 'C:\Program Files\soft\new.exe' and finally 'C:\Program Files\soft\new folder\exec.exe'. Try to create 'C:\Program Files\soft\new.exe'
 ECHO.   [i] The permissions are also checked and filtered using icacls
 ECHO.   [?] https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#services
-for /f "tokens=2" %%n in ('sc query state^= all^| findstr SERVICE_NAME') do (
-	for /f "delims=: tokens=1*" %%r in ('sc qc "%%~n" ^| findstr BINARY_PATH_NAME ^| findstr /i /v /l /c:"c:\windows\system32" ^| findstr /v /c:""""') do (
-		ECHO.%%~s ^| findstr /r /c:"[a-Z][ ][a-Z]" >nul 2>&1 && (ECHO.%%n && ECHO.%%~s && icacls %%s | findstr /i "(F) (M) (W) :\" | findstr /i ":\\ everyone authenticated users todos %username%") && ECHO.
-	)
+REM Read service ImagePath values once; repeated sc qc calls can stall on busy systems.
+for /f "tokens=1,2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Services" /s /v ImagePath 2^>nul') do (
+    if /i "%%A"=="ImagePath" (
+        set "serviceImage=%%C"
+        set "firstToken="
+        set "remaining="
+        for /f "tokens=1,*" %%P in ("!serviceImage!") do (
+            set "firstToken=%%P"
+            set "remaining=%%Q"
+        )
+        if defined remaining (
+            set "firstTokenNoQuote=!firstToken:"=!"
+            if "!firstTokenNoQuote!"=="!firstToken!" if /i not "!firstToken:~-4!"==".exe" if /i not "!firstToken:~-4!"==".com" (
+                echo(!serviceImage! | findstr /i /c:".exe" /c:".com" >nul && (
+                    ECHO.    Candidate service key: !serviceKey!
+                    ECHO.    Unquoted ImagePath: !serviceImage!
+                    ECHO.    [i] Verify executable-prefix ACLs and service restart rights.
+                )
+            )
+        )
+    ) else (
+        set "serviceKey=%%A"
+    )
 )
 CALL :T_Progress 2
 ::wmic service get name,displayname,pathname,startmode | more | findstr /i /v "C:\\Windows\\system32\\" | findstr /i /v """
@@ -599,32 +623,28 @@ CALL :T_Progress 3
 
 :McAffeeSitelist
 CALL :ColorLine " %E%33m[+]%E%97m McAffee SiteList.xml"
-cd %ProgramFiles% 2>nul
-dir /s SiteList.xml 2>nul
-cd %ProgramFiles(x86)% 2>nul
-dir /s SiteList.xml 2>nul
-cd "%windir%\..\Documents and Settings" 2>nul
-dir /s SiteList.xml 2>nul
-cd %windir%\..\Users 2>nul
-dir /s SiteList.xml 2>nul
+if exist "%ProgramFiles%\" CALL :ListFiles "%ProgramFiles%" "SiteList.xml"
+if exist "%ProgramFiles(x86)%\" CALL :ListFiles "%ProgramFiles(x86)%" "SiteList.xml"
+if exist "%PEAS_USERS_ROOT%\" CALL :ListFiles "%PEAS_USERS_ROOT%" "SiteList.xml"
 ECHO.
 CALL :T_Progress 2
 
 :GPPPassword
 CALL :ColorLine " %E%33m[+]%E%97m GPP Password"
-cd "%SystemDrive%\Microsoft\Group Policy\history" 2>nul
-dir /s/b Groups.xml == Services.xml == Scheduledtasks.xml == DataSources.xml == Printers.xml == Drives.xml 2>nul
-cd "%windir%\..\Documents and Settings\All Users\Application Data\Microsoft\Group Policy\history" 2>nul
-dir /s/b Groups.xml == Services.xml == Scheduledtasks.xml == DataSources.xml == Printers.xml == Drives.xml 2>nul
+if exist "%SystemDrive%\Microsoft\Group Policy\history\" CALL :ListFiles "%SystemDrive%\Microsoft\Group Policy\history" "Groups.xml Services.xml Scheduledtasks.xml DataSources.xml Printers.xml Drives.xml"
+if exist "%ProgramData%\Microsoft\Group Policy\history\" CALL :ListFiles "%ProgramData%\Microsoft\Group Policy\history" "Groups.xml Services.xml Scheduledtasks.xml DataSources.xml Printers.xml Drives.xml"
 ECHO.
 CALL :T_Progress 2
 
 :CloudCreds
 CALL :ColorLine " %E%33m[+]%E%97m Cloud Credentials"
-cd "%SystemDrive%\Users"
-dir /s/b .aws == credentials == gcloud == credentials.db == legacy_credentials == access_tokens.db == .azure == accessTokens.json == azureProfile.json 2>nul
-cd "%windir%\..\Documents and Settings"
-dir /s/b .aws == credentials == gcloud == credentials.db == legacy_credentials == access_tokens.db == .azure == accessTokens.json == azureProfile.json 2>nul
+if exist "%PEAS_USERS_ROOT%\" CALL :ListFiles "%PEAS_USERS_ROOT%" "credentials credentials.db legacy_credentials access_tokens.db accessTokens.json azureProfile.json"
+for /d %%U in ("%PEAS_USERS_ROOT%\*") do (
+    if exist "%%~fU\.aws\" ECHO.%%~fU\.aws
+    if exist "%%~fU\.azure\" ECHO.%%~fU\.azure
+    if exist "%%~fU\AppData\Roaming\gcloud\" ECHO.%%~fU\AppData\Roaming\gcloud
+    if exist "%%~fU\Application Data\gcloud\" ECHO.%%~fU\Application Data\gcloud
+)
 ECHO.
 CALL :T_Progress 2
 
@@ -660,10 +680,17 @@ CALL :T_Progress 2
 ECHO.Looking inside HKCU\Software\OpenSSH\Agent\Keys
 CALL :T_Progress 2
 reg query HKCU\Software\OpenSSH\Agent\Keys /s 2>nul
-cd %USERPROFILE% 2>nul && dir /s/b *password* == *credential* 2>nul
-cd ..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..
-dir /s/b /A:-D RDCMan.settings == *.rdg == SCClient.exe == *_history == .sudo_as_admin_successful == .profile == *bashrc == httpd.conf == *.plan == .htpasswd == .git-credentials == *.rhosts == hosts.equiv == Dockerfile == docker-compose.yml == appcmd.exe == TypedURLs == TypedURLsTime == History == Bookmarks == Cookies == "Login Data" == places.sqlite == key3.db == key4.db == credentials == credentials.db == access_tokens.db == accessTokens.json == legacy_credentials == azureProfile.json == unattend.txt == access.log == error.log == *.gpg == *.pgp == *config*.php == elasticsearch.y*ml == kibana.y*ml == *.p12 == *.der == *.csr == *.cer == known_hosts == id_rsa == id_dsa == *.ovpn == anaconda-ks.cfg == hostapd.conf == rsyncd.conf == cesi.conf == supervisord.conf == tomcat-users.xml == *.kdbx == KeePass.config == Ntds.dit == SAM == SYSTEM == FreeSSHDservice.ini == sysprep.inf == sysprep.xml == unattend.xml == unattended.xml == *vnc*.ini == *vnc*.c*nf* == *vnc*.txt == *vnc*.xml == groups.xml == services.xml == scheduledtasks.xml == printers.xml == drives.xml == datasources.xml == php.ini == https.conf == https-xampp.conf == httpd.conf == my.ini == my.cnf == access.log == error.log == server.xml == SiteList.xml == ConsoleHost_history.txt == setupinfo == setupinfo.bak 2>nul | findstr /v ".dll"
-cd inetpub 2>nul && (dir /s/b web.config == *.log & cd ..)
+if "%PEAS_HAS_ROBOCOPY%" == "true" (
+    if exist "%USERPROFILE%\" robocopy "%USERPROFILE%" "%TEMP%\winpeas-list-only" *password* *credential* /L /S /XJ /R:0 /W:0 /NJH /NJS /NDL /NP /FP /NS /NC
+) else (
+    if exist "%USERPROFILE%\" (cd /d "%USERPROFILE%" && dir /s/b /a:-d-l *password* == *credential* 2>nul)
+)
+if "%PEAS_HAS_ROBOCOPY%" == "true" (
+    if exist "%PEAS_USERS_ROOT%\" robocopy "%PEAS_USERS_ROOT%" "%TEMP%\winpeas-list-only" RDCMan.settings *.rdg SCClient.exe *_history .sudo_as_admin_successful .profile *bashrc httpd.conf *.plan .htpasswd .git-credentials *.rhosts hosts.equiv Dockerfile docker-compose.yml appcmd.exe TypedURLs TypedURLsTime History Bookmarks Cookies "Login Data" places.sqlite key3.db key4.db credentials credentials.db access_tokens.db accessTokens.json legacy_credentials azureProfile.json unattend.txt access.log error.log *.gpg *.pgp *config*.php elasticsearch.y*ml kibana.y*ml *.p12 *.der *.csr *.cer known_hosts id_rsa id_dsa *.ovpn anaconda-ks.cfg hostapd.conf rsyncd.conf cesi.conf supervisord.conf tomcat-users.xml *.kdbx *.psafe3 KeePass.config Ntds.dit SAM SYSTEM FreeSSHDservice.ini sysprep.inf sysprep.xml unattend.xml unattended.xml *vnc*.ini *vnc*.c*nf* *vnc*.txt *vnc*.xml groups.xml services.xml scheduledtasks.xml printers.xml drives.xml datasources.xml php.ini https.conf https-xampp.conf httpd.conf my.ini my.cnf access.log error.log server.xml SiteList.xml ConsoleHost_history.txt setupinfo setupinfo.bak /L /S /XJ /R:0 /W:0 /NJH /NJS /NDL /NP /FP /NS /NC | findstr /v ".dll"
+) else (
+    if exist "%PEAS_USERS_ROOT%\" (cd /d "%PEAS_USERS_ROOT%" && dir /s/b /A:-D-L RDCMan.settings == *.rdg == SCClient.exe == *_history == .sudo_as_admin_successful == .profile == *bashrc == httpd.conf == *.plan == .htpasswd == .git-credentials == *.rhosts == hosts.equiv == Dockerfile == docker-compose.yml == appcmd.exe == TypedURLs == TypedURLsTime == History == Bookmarks == Cookies == "Login Data" == places.sqlite == key3.db == key4.db == credentials == credentials.db == access_tokens.db == accessTokens.json == legacy_credentials == azureProfile.json == unattend.txt == access.log == error.log == *.gpg == *.pgp == *config*.php == elasticsearch.y*ml == kibana.y*ml == *.p12 == *.der == *.csr == *.cer == known_hosts == id_rsa == id_dsa == *.ovpn == anaconda-ks.cfg == hostapd.conf == rsyncd.conf == cesi.conf == supervisord.conf == tomcat-users.xml == *.kdbx == *.psafe3 == KeePass.config == Ntds.dit == SAM == SYSTEM == FreeSSHDservice.ini == sysprep.inf == sysprep.xml == unattend.xml == unattended.xml == *vnc*.ini == *vnc*.c*nf* == *vnc*.txt == *vnc*.xml == groups.xml == services.xml == scheduledtasks.xml == printers.xml == drives.xml == datasources.xml == php.ini == https.conf == https-xampp.conf == httpd.conf == my.ini == my.cnf == access.log == error.log == server.xml == SiteList.xml == ConsoleHost_history.txt == setupinfo == setupinfo.bak 2>nul | findstr /v ".dll")
+)
+if exist "%SystemDrive%\inetpub\" CALL :ListFiles "%SystemDrive%\inetpub" "web.config *.log"
 ECHO.
 CALL :T_Progress 2
 
@@ -709,10 +736,19 @@ if "%long%" == "true" (
 TITLE WinPEAS - Windows local Privilege Escalation Awesome Script - Idle
 ECHO.---
 ECHO.Scan complete.
-PAUSE >NUL 
+IF /I "%~1" == "--pause" PAUSE >NUL
 EXIT /B
 
 :::-Subroutines
+
+:ListFiles
+REM List matching names without entering junctions when robocopy is available.
+if "%PEAS_HAS_ROBOCOPY%" == "true" (
+    robocopy "%~1" "%TEMP%\winpeas-list-only" %~2 /L /S /XJ /R:0 /W:0 /NJH /NJS /NDL /NP /FP /NS /NC
+) else (
+    pushd "%~1" 2>nul && (dir /s/b /a:-d-l %~2 2>nul & popd)
+)
+EXIT /B
 
 :SetOnce
 REM :: ANSI escape character is set once below - for ColorLine Subroutine
