@@ -43,10 +43,43 @@ function chkfs() {
 
 function add_sysinternals() {
   info "Downloading SysinternalsSuite"
-  chkfs "./windows/"
-  wget -O ./windows/SysinternalsSuite.zip "https://download.sysinternals.com/files/SysinternalsSuite.zip"
-  unzip -o -d ./windows/SysinternalsSuite ./windows/SysinternalsSuite.zip
-  rm -v ./windows/SysinternalsSuite.zip
+  chkfs "./windows/SysinternalsSuite"
+  # GitHub rejects blobs over 100 MiB and warns over 50 MiB. Unpack into a
+  # staging dir so an oversized replacement cannot delete the last copy that
+  # still fits (ZoomIt.exe crossed 100 MiB in the 2026-11-01 run).
+  local max_bytes=$((100 * 1024 * 1024))
+  local warn_bytes=$((50 * 1024 * 1024))
+  local zip staging src rel dest size
+  zip="$(mktemp)"
+  staging="$(mktemp -d)"
+  if ! wget -O "$zip" "https://download.sysinternals.com/files/SysinternalsSuite.zip"; then
+    rm -f "$zip"
+    rm -rf "$staging"
+    info "Sysinternals download failed, keeping the existing suite"
+    add-to-list "SysInternals,https://learn.microsoft.com/en-us/sysinternals,Windows utilities signed by Microsoft"
+    return
+  fi
+  unzip -o -d "$staging" "$zip"
+  rm -f "$zip"
+  while IFS= read -r -d '' src; do
+    rel="${src#"$staging"/}"
+    dest="./windows/SysinternalsSuite/$rel"
+    size="$(wc -c < "$src" | tr -d '[:space:]')"
+    if [ "$size" -gt "$max_bytes" ]; then
+      if [ -f "$dest" ]; then
+        info "Keeping previous ${dest}: new file is ${size} bytes, over GitHub's 100 MiB limit"
+      else
+        info "Skipping ${dest}: ${size} bytes, over GitHub's 100 MiB limit"
+      fi
+      continue
+    fi
+    if [ "$size" -gt "$warn_bytes" ]; then
+      info "Warning: ${dest} is ${size} bytes, over GitHub's 50 MiB recommendation"
+    fi
+    mkdir -p "$(dirname "$dest")"
+    mv "$src" "$dest"
+  done < <(find "$staging" -type f -print0)
+  rm -rf "$staging"
   add-to-list "SysInternals,https://learn.microsoft.com/en-us/sysinternals,Windows utilities signed by Microsoft"
 }
 
@@ -131,7 +164,7 @@ function add_juicypotato() {
   info "Downloading JuicyPotato"
   chkfs "./windows/"
   wget -O ./windows/JuicyPotato.exe "https://github.com/ohpe/juicy-potato/releases/latest/download/JuicyPotato.exe"
-  add-to-list "JuicyPotato.exe,https://github.com/ohpe/juicy-potato,https://github.com/ohpe/juicy-potato"
+  add-to-list "JuicyPotato.exe,https://github.com/ohpe/juicy-potato,Abuse SeImpersonatePrivilege to run code as SYSTEM via DCOM"
 }
 
 function add_printspoofer() {
@@ -174,7 +207,7 @@ function add_diaghub() {
   info "Downloading DiagHub"
   chkfs "./windows/"
   wget -O ./windows/diaghub.exe "https://gitlab.com/onemask/pentest-tools/-/raw/master/windows/diaghub.exe"
-  add-to-list "DiagHub.exe,https://gitlab.com/onemask/pentest-tools,Diagnostics Hub Standard Collector Service"
+  add-to-list "DiagHub.exe,https://gitlab.com/onemask/pentest-tools,Abuse SeImpersonatePrivilege to run code as SYSTEM via the Diagnostics Hub service"
 }
 
 function add_lazagne() {
@@ -206,7 +239,7 @@ function add_plink() {
   chkfs "./windows/"
   wget -O ./windows/plink32.exe "https://the.earth.li/~sgtatham/putty/latest/w32/plink.exe"
   wget -O ./windows/plink64.exe "https://the.earth.li/~sgtatham/putty/latest/w64/plink.exe"
-  add-to-list "plink.exe,https://www.cog-genomics.org/plink/,Network connection tool"
+  add-to-list "plink.exe,https://www.chiark.greenend.org.uk/~sgtatham/putty/,Command-line SSH client from the PuTTY suite"
 }
 
 function add_deepce() {
@@ -219,8 +252,13 @@ function add_deepce() {
 function add_webshells() {
   info "Downloading webshells"
   chkfs "./webshells/PHP/wso-webshell/"
-  wget -O ./webshells/PHP/wso-webshell/wso.php "https://raw.githubusercontent.com/mIcHyAmRaNe/wso-webshell/master/wso.php"
-  sed -i 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php 2>/dev/null || perl -i -pe 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php
+  # mIcHyAmRaNe/wso-webshell is gone (404). wget -O truncates the destination
+  # before it sees the status, which is how wso.php became an empty blob.
+  if [ -s ./webshells/PHP/wso-webshell/wso.php ]; then
+    sed -i 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php 2>/dev/null || perl -i -pe 's/fa769dac7a0a94ee47d8ebe021eaba9e/0fc3bcf177377d328c77b2b51b7f3c9b/g' ./webshells/PHP/wso-webshell/wso.php
+  else
+    info "wso.php has no upstream and no local copy to keep"
+  fi
   echo 'exegol4thewin' > ./webshells/PHP/wso-webshell/password.txt
   # Setting password to exegol4thewin
   chkfs "./webshells/ASPX"
@@ -343,9 +381,17 @@ function add_ligolo-ng() {
 
 function add_pyexe() {
   info "Downloading Pyexe"
-  local TAG
-  TAG=$(curl -s https://api.github.com/repos/manthey/pyexe/releases/latest | jq .tag_name | sed 's/"//g')
-  wget -O ./windows/py37-64.exe "https://github.com/manthey/pyexe/releases/download/$TAG/py37-64.exe"
+  # releases/latest is v19+ (2026-10-27) and no longer publishes py37-64.exe.
+  # pyexe-latest still has that asset. wget -O would truncate the vendored
+  # binary before the 404 comes back, so write to a temp file first.
+  local tmp
+  tmp="$(mktemp)"
+  if wget -O "$tmp" "https://github.com/manthey/pyexe/releases/download/pyexe-latest/py37-64.exe"; then
+    mv "$tmp" ./windows/py37-64.exe
+  else
+    rm -f "$tmp"
+    info "py37-64.exe download failed, keeping the existing file"
+  fi
   add-to-list "pyexe,https://github.com/manthey/pyexe,Standalone Windows Python 3.7 64 bits executable"
 }
 
