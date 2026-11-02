@@ -29,10 +29,14 @@ jobs:
       - name: Sanity check for resources_list.csv
         if: success()
         run: |
-          grep -qE '([^,]*,[^,]*){3,}' resources_list.csv \
-            && (echo '[-] Wrong number of columns on the following lines' \
-            && grep -oE '([^,]*,[^,]*){3,}' resources_list.csv || exit 1) \
-            || (echo '[+] List contains right number of columns' && exit 0)
+          # The previous step moved the list to /tmp. Checking the old path
+          # made grep miss the file and report success.
+          if grep -qE '([^,]*,[^,]*){3,}' /tmp/resources_list.csv; then
+            echo '[-] Wrong number of columns on the following lines'
+            grep -nE '([^,]*,[^,]*){3,}' /tmp/resources_list.csv
+            exit 1
+          fi
+          echo '[+] List contains right number of columns'
       - name: Checkout Exegol-docs
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
@@ -68,6 +72,10 @@ jobs:
           git config --local user.email "actions@github.com"
           echo '[*] Staging change'
           git add --verbose docs/src/public/exegol_resources/resources_list.csv
+          if git diff --cached --quiet; then
+            echo '[*] resources_list.csv is unchanged, nothing to commit'
+            exit 0
+          fi
           echo '[*] Commiting changes'
           git commit --verbose -m "PIPELINE: resources list"
           echo '[*] Pulling latest changes from remote'
